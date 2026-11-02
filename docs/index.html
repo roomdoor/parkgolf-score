@@ -75,7 +75,7 @@
   <p id="storage-warn" class="warn" hidden>이 창을 닫으면 입력한 점수가 사라집니다. 크롬이나 엣지의 일반 창(시크릿 창 아님)에서 여세요.</p>
 
   <section id="input">
-    <p class="hint">노란 칸에 적으세요. 적는 즉시 저장됩니다. 코스 점수는 그 코스 9홀 합계입니다. Enter를 누르면 아래 칸으로 갑니다.</p>
+    <p class="hint">노란 칸에 적으세요. 적는 즉시 저장됩니다. 코스 점수는 그 코스 9홀 합계입니다. 코스 수는 '대회 설정'에서 바꿉니다. Enter를 누르면 아래 칸으로 갑니다.</p>
     <div class="scroll"><table id="entry"></table></div>
     <div class="toolbar">
       <button class="btn" id="add-rows">+ 선수 칸 10개 더 만들기</button>
@@ -103,6 +103,10 @@
     <label for="s-place">장소</label><input type="text" id="s-place" data-s="place">
     <label>코스 이름과 기준타수</label>
     <table id="course-table"></table>
+    <div class="toolbar">
+      <button class="btn" id="add-course">+ 코스 추가</button>
+      <button class="btn danger" id="del-course">− 마지막 코스 빼기</button>
+    </div>
     <label for="s-award">부문별 시상</label>
     <select id="s-award" data-s="awardN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지
     <label>새 대회 시작</label>
@@ -116,10 +120,12 @@
 const KEY = 'parkgolf-v1';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const blankPlayer = () => ({ name: '', gender: '', club: '', group: '', scores: [null, null, null, null] });
+const MAX_COURSES = 26; // 기본 코스 이름을 A~Z 로 붙이므로
+const courseName = i => `${String.fromCharCode(65 + i)}코스`;
+const blankPlayer = (n = state.settings.courses.length) => ({ name: '', gender: '', club: '', group: '', scores: Array(n).fill(null) });
 const defaults = () => ({
   settings: { title: '제1회 OO 파크골프 대회', date: '', place: '', courses: ['A코스', 'B코스', 'C코스', 'D코스'], pars: [33, 33, 33, 33], awardN: 3 },
-  players: Array.from({ length: 20 }, blankPlayer),
+  players: Array.from({ length: 20 }, () => blankPlayer(4)),
 });
 
 // 브라우저에 남은 값은 모양이 틀릴 수 있으니 필요한 칸만 골라 다시 만든다
@@ -128,17 +134,19 @@ function normalize(d) {
   const s = { ...defaults().settings, ...(d.settings || {}) };
   const str = v => (typeof v === 'string' || typeof v === 'number') ? String(v) : '';
   const num = v => (Number.isInteger(v) ? v : null);
+  const n = Array.isArray(s.courses) ? Math.min(MAX_COURSES, Math.max(1, s.courses.length)) : 4;
+  const idx = [...Array(n).keys()];
   return {
     settings: {
       title: str(s.title), date: str(s.date), place: str(s.place),
-      courses: [0, 1, 2, 3].map(i => str((s.courses || [])[i]) || `${'ABCD'[i]}코스`),
-      pars: [0, 1, 2, 3].map(i => num((s.pars || [])[i]) ?? 33),
+      courses: idx.map(i => str((s.courses || [])[i]) || courseName(i)),
+      pars: idx.map(i => num((s.pars || [])[i]) ?? 33),
       awardN: Math.min(5, Math.max(1, parseInt(s.awardN, 10) || 3)),
     },
     players: d.players.map(p => ({
       name: str(p && p.name), gender: ['남', '여'].includes(p && p.gender) ? p.gender : '',
       club: str(p && p.club), group: str(p && p.group),
-      scores: [0, 1, 2, 3].map(i => num(((p && p.scores) || [])[i])),
+      scores: idx.map(i => num(((p && p.scores) || [])[i])),
     })),
   };
 }
@@ -257,8 +265,10 @@ function renderRank() {
   const waiting = named.filter(p => !isComplete(p)).length;
   $('stats').innerHTML = `<span>참가 ${named.length}명</span><span>순위 확정 ${ranked.length}명</span>`
     + (waiting ? `<span class="st-입력중">입력중 ${waiting}명</span>` : '');
-  $('rule').textContent = `합계가 같으면 ${s.courses[3]}, ${s.courses[2]}, ${s.courses[1]} 순으로 타수가 적은 선수가 앞섭니다. 모두 같으면 공동 순위입니다.`;
-  if (!ranked.length) { $('rank-table').innerHTML = '<tr><td class="empty">아직 4개 코스를 모두 입력한 선수가 없습니다.</td></tr>'; return; }
+  const tie = s.courses.slice(1).reverse();
+  $('rule').textContent = (tie.length ? `합계가 같으면 ${tie.join(', ')} 순으로 타수가 적은 선수가 앞섭니다. 모두 같으면` : '합계가 같으면')
+    + ' 공동 순위입니다.';
+  if (!ranked.length) { $('rank-table').innerHTML = `<tr><td class="empty">아직 ${s.courses.length}개 코스를 모두 입력한 선수가 없습니다.</td></tr>`; return; }
   $('rank-table').innerHTML = `<thead><tr><th>순위</th><th>이름</th><th>성별</th><th>소속</th><th>조</th>
     ${s.courses.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>기준타 대비</th><th>부문 순위</th></tr></thead><tbody>`
     + ranked.map(p => rankRow(p, p.rank, q => [q.name, q.gender, q.club, q.group, ...q.scores, q.total, diff(q.total),
@@ -286,7 +296,29 @@ function renderSetting() {
   $('course-table').innerHTML = '<tr><th>순서</th><th>코스 이름</th><th>기준타수</th></tr>'
     + s.courses.map((c, i) => `<tr><td>${i + 1}번째</td><td><input data-c="${i}" value="${esc(c)}"></td>
       <td><input class="par" data-p="${i}" inputmode="numeric" value="${s.pars[i]}"></td></tr>`).join('');
+  $('add-course').disabled = s.courses.length >= MAX_COURSES;
+  $('del-course').disabled = s.courses.length <= 1;
 }
+
+$('add-course').onclick = () => {
+  const s = state.settings;
+  s.courses.push(courseName(s.courses.length));
+  s.pars.push(33);
+  state.players.forEach(p => p.scores.push(null));
+  save();
+  renderSetting();
+};
+
+$('del-course').onclick = () => {
+  const s = state.settings, k = s.courses.length - 1;
+  if (state.players.some(p => p.scores[k] !== null)
+    && !confirm(`${s.courses[k]}에 적힌 점수가 모두 지워집니다.\n계속할까요?`)) return;
+  s.courses.pop();
+  s.pars.pop();
+  state.players.forEach(p => p.scores.pop());
+  save();
+  renderSetting();
+};
 
 $('setting').addEventListener('input', e => {
   const t = e.target, s = state.settings;

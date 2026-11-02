@@ -32,6 +32,15 @@ test('부문 순위와 시상자 (공동 3위 포함)', () => {
   assert.deepStrictEqual(a.여자부.map(p => [p.divRank, p.name]), [[1, '윤서연'], [2, '송지유'], [3, '한은지']]);
 });
 
+test('코스 수가 달라도 순위: 2개 코스면 합계 > B, 8개 코스면 합계 > H > G ...', () => {
+  const two = rankPlayers([P('가', '남', 30, 31), P('나', '남', 31, 30), P('다', '여', 32, 30)]);
+  assert.deepStrictEqual(two.map(p => [p.rank, p.name, p.total]), [[1, '나', 61], [2, '가', 61], [3, '다', 62]]);
+  const eight = rankPlayers([P('가', '남', 30, 30, 30, 30, 30, 30, 31, 30), P('나', '남', 30, 30, 30, 30, 30, 30, 30, 31)]);
+  assert.deepStrictEqual(eight.map(p => [p.rank, p.name]), [[1, '가'], [2, '나']]);
+  const one = rankPlayers([P('가', '남', 30), P('나', '남', 30)]);
+  assert.deepStrictEqual(one.map(p => p.rank), [1, 1]);
+});
+
 test('이름 없음, 코스 빈칸, 범위 밖 점수는 순위에서 빠진다', () => {
   const r = rankPlayers([
     P('', '남', 30, 30, 30, 30), P('미완료', '여', 30, 30, null, null), P('오타', '남', 311, 30, 30, 30),

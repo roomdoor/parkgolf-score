@@ -1,18 +1,18 @@
-// 순위 계산: 4개 코스 합계가 적을수록 앞. 같으면 D, C, B 코스 순으로 적은 쪽이 앞.
-// B코스까지 모두 같으면 공동 순위 (1, 2, 2, 4 처럼 다음 순위는 건너뜀).
+// 순위 계산: 모든 코스 합계가 적을수록 앞. 같으면 마지막 코스부터 두 번째 코스까지 거꾸로
+// (4개 코스면 D, C, B) 적은 쪽이 앞. 모두 같으면 공동 순위 (1, 2, 2, 4 처럼 다음 순위는 건너뜀).
+// 코스 수는 대회마다 다르다. 선수마다 scores 길이가 코스 수와 같다고 본다.
 
 function isScore(s) {
   return Number.isInteger(s) && s >= 9 && s <= 99;
 }
 
 function isComplete(p) {
-  return p.name.trim() !== '' && p.scores.length === 4 && p.scores.every(isScore);
+  return p.name.trim() !== '' && p.scores.length > 0 && p.scores.every(isScore);
 }
 
 function compare(a, b) {
-  const ka = [a.total, a.scores[3], a.scores[2], a.scores[1]];
-  const kb = [b.total, b.scores[3], b.scores[2], b.scores[1]];
-  for (let i = 0; i < 4; i++) if (ka[i] !== kb[i]) return ka[i] - kb[i];
+  if (a.total !== b.total) return a.total - b.total;
+  for (let k = a.scores.length - 1; k >= 1; k--) if (a.scores[k] !== b.scores[k]) return a.scores[k] - b.scores[k];
   return 0;
 }
 
