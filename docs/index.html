@@ -4,69 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>파크골프 대회 성적표</title>
-<style>
-  :root { --green:#2e7d32; --green-d:#1b5e20; --yellow:#fff8d6; --gray:#f2f2f2; --line:#c8c8c8; --red:#c62828; --orange:#e65100; }
-  * { box-sizing:border-box; }
-  body { margin:0; font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif; font-size:18px; color:#222; background:#fafafa; }
-  header { background:var(--green); color:#fff; padding:16px 24px; }
-  header h1 { margin:0; font-size:28px; }
-  header p { margin:4px 0 0; opacity:.9; }
-  nav { display:flex; gap:8px; flex-wrap:wrap; padding:12px 24px; background:#e8f5e9; position:sticky; top:0; z-index:5; }
-  nav button { font-size:20px; padding:12px 22px; border:2px solid var(--green); background:#fff; color:var(--green-d); border-radius:10px; cursor:pointer; font-weight:bold; font-family:inherit; }
-  nav button.on { background:var(--green); color:#fff; }
-  main { padding:16px 24px 60px; }
-  section { display:none; }
-  section.on { display:block; }
-  .hint { color:#555; margin:4px 0 12px; }
-  .warn { background:#ffebee; color:var(--red); padding:12px 16px; border-radius:8px; font-weight:bold; }
-  .scroll { overflow-x:auto; }
-  table { border-collapse:collapse; background:#fff; }
-  th, td { border:1px solid var(--line); padding:6px 8px; text-align:center; }
-  th { background:var(--green); color:#fff; }
-  td.calc { background:var(--gray); }
-  input, select { font-size:18px; font-family:inherit; }
-  #entry input, #entry select { border:1px solid #bbb; background:var(--yellow); padding:6px; border-radius:4px; }
-  #entry .name, #entry .club { width:7em; }
-  #entry .grp { width:3.5em; }
-  #entry .sc { width:3em; text-align:center; }
-  #entry input.bad { border:2px solid var(--red); background:#ffebee; }
-  .st-입력중 { color:var(--orange); font-weight:bold; }
-  .st-이름없음, .st-점수확인, .st-팀없음 { color:var(--red); font-weight:bold; }
-  .st-완료 { color:var(--green); }
-  .btn { font-size:18px; padding:10px 18px; border-radius:8px; border:1px solid #999; background:#fff; cursor:pointer; font-family:inherit; }
-  .btn.main { background:var(--green); color:#fff; border-color:var(--green); font-weight:bold; }
-  .btn.danger { color:var(--red); border-color:var(--red); }
-  .del { border:none; background:none; color:#999; font-size:20px; cursor:pointer; }
-  tr.r1 td { background:#ffe082; }
-  tr.r2 td { background:#e0e0e0; }
-  tr.r3 td { background:#ffcc80; }
-  .toolbar { display:flex; gap:12px; align-items:center; margin:12px 0; flex-wrap:wrap; }
-  .saved { color:var(--green); }
-  .stats span { margin-right:24px; }
-  .award h3, #rank h3 { margin:20px 0 6px; color:var(--green-d); }
-  .empty { color:#888; }
-  .form label { display:block; margin:14px 0 4px; font-weight:bold; }
-  .form input[type=text], .form input[type=date] { width:22em; max-width:100%; padding:8px; }
-  .form td input { width:9em; padding:6px; }
-  .form td input.par { width:4em; text-align:center; }
-  .form label.chk { display:inline-block; margin:4px 20px 4px 0; font-weight:normal; }
-  .form label.chk input { width:20px; height:20px; vertical-align:middle; }
-  @media print {
-    nav, .toolbar, .hint, .noprint { display:none !important; }
-    body { font-size:11pt; background:#fff; }
-    header { background:none; color:#000; padding:0 0 8px; }
-    main { padding:0; }
-    table { width:100%; }
-    th, tr.r1 td, tr.r2 td, tr.r3 td { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    th { background:#ddd; color:#000; }
-    thead { display:table-header-group; }
-    tr { break-inside:avoid; }
-    @page { size:A4 landscape; margin:12mm; }
-  }
-</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;800&display=swap">
+<link rel="stylesheet" href="style.css">
+<!-- 모듈 방식이라 사이트 주소(또는 로컬 서버)로 열어야 동작한다. 파일 더블클릭으로는 안 열림 -->
+<script type="module" src="app.js"></script>
 </head>
 <body>
 <header><h1 id="h-title"></h1><p id="h-sub"></p></header>
+<button class="btn" id="tv-off">TV 화면 끄기 (Esc)</button>
 <nav>
   <button data-tab="input">성적 입력</button>
   <button data-tab="rank">순위표</button>
@@ -76,8 +22,16 @@
 <main>
   <p id="storage-warn" class="warn" hidden>이 창을 닫으면 입력한 점수가 사라집니다. 크롬이나 엣지의 일반 창(시크릿 창 아님)에서 여세요.</p>
 
+  <!-- 성적 입력: tab-entry.js -->
   <section id="input">
-    <p class="hint">노란 칸에 적으세요. 적는 즉시 저장됩니다. 코스 점수는 그 코스 9홀 합계입니다. 코스 수는 '대회 설정'에서 바꿉니다. Enter를 누르면 아래 칸으로 갑니다.</p>
+    <ul class="hint">
+      <li>노란 칸에 적으면 바로 저장됩니다.</li>
+      <li>코스 칸에는 그 코스 9홀 합계를 적습니다. (코스 수는 '대회 설정'에서)</li>
+      <li>방향키(↑↓←→)로 칸을 옮깁니다. Enter를 누르면 아래 칸으로 갑니다. 빨간 줄은 확인이 필요합니다.</li>
+      <li>칸 제목(⇅ 표시)을 누르면 정렬됩니다. 여러 칸을 차례로 누르면 누른 순서(①②)대로 정렬합니다. 같은 제목을 다시 누르면 거꾸로, 한 번 더 누르면 빠집니다.</li>
+      <li id="pick-hint">초록 점수 칸은 단체전 팀 점수로 쓰인 점수(그 코스 팀원 중 최저타)입니다.</li>
+    </ul>
+    <div class="toolbar">정렬: <b id="sort-now"></b><button class="btn" id="sort-off">정렬 초기화</button></div>
     <div class="scroll"><table id="entry"></table></div>
     <datalist id="club-names"></datalist><datalist id="team-names"></datalist>
     <div class="toolbar">
@@ -86,9 +40,11 @@
     </div>
   </section>
 
+  <!-- 순위표: tab-rank.js -->
   <section id="rank">
     <div class="toolbar">
       <button class="btn main" onclick="window.print()">인쇄하기</button>
+      <button class="btn gold" id="tv-on">📺 TV로 크게 보기</button>
       <span class="stats" id="stats"></span>
     </div>
     <p class="hint" id="rule"></p>
@@ -97,11 +53,13 @@
     <div id="club-rank"><h3>클럽 종합</h3><div class="scroll"><table id="club-table"></table></div></div>
   </section>
 
+  <!-- 시상자: tab-award.js -->
   <section id="award">
     <div class="toolbar"><button class="btn main" onclick="window.print()">인쇄하기</button></div>
     <div id="award-list"></div>
   </section>
 
+  <!-- 대회 설정: tab-setting.js -->
   <section id="setting" class="form">
     <label for="s-title">대회명</label><input type="text" id="s-title" data-s="title">
     <label for="s-date">날짜</label><input type="date" id="s-date" data-s="date">
@@ -144,357 +102,5 @@
     <button class="btn danger" id="reset">선수와 점수 모두 지우기</button>
   </section>
 </main>
-
-<script src="rank.js"></script>
-<script>
-const KEY = 'parkgolf-v1';
-const $ = id => document.getElementById(id);
-// 예전 사파리는 체크박스·선택칸에서 input 대신 change 만 보내므로 둘 다 받는다 (두 번 처리돼도 결과 같음)
-const onBoth = (el, fn) => ['input', 'change'].forEach(ev => el.addEventListener(ev, fn));
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const MAX_COURSES = 26; // 기본 코스 이름을 A~Z 로 붙이므로
-const courseName = i => `${String.fromCharCode(65 + i)}코스`;
-const blankPlayer = (n = state.settings.courses.length) => ({ name: '', gender: '', club: '', group: '', event: '개인', team: '', scores: Array(n).fill(null) });
-const defaults = () => ({
-  settings: { title: '제1회 OO 파크골프 대회', date: '', place: '', courses: ['A코스', 'B코스', 'C코스', 'D코스'], pars: [33, 33, 33, 33], awardN: 3, indivSplit: 'gender',
-    indiv: true, team: false, teamSplit: 'gender', teamAwardN: 3,
-    club: false, indivPts: [6, 4, 3, 2, 1], teamPts: [8, 6, 4, 2], clubAwardN: 4 },
-  players: Array.from({ length: 20 }, () => blankPlayer(4)),
-});
-
-// 브라우저에 남은 값은 모양이 틀릴 수 있으니 필요한 칸만 골라 다시 만든다
-function normalize(d) {
-  if (!d || typeof d !== 'object' || !Array.isArray(d.players)) throw new Error('형식이 다릅니다');
-  const s = { ...defaults().settings, ...(d.settings || {}) };
-  const str = v => (typeof v === 'string' || typeof v === 'number') ? String(v) : '';
-  const num = v => (Number.isInteger(v) ? v : null);
-  const n = Array.isArray(s.courses) ? Math.min(MAX_COURSES, Math.max(1, s.courses.length)) : 4;
-  const idx = [...Array(n).keys()];
-  return {
-    settings: {
-      title: str(s.title), date: str(s.date), place: str(s.place),
-      courses: idx.map(i => str((s.courses || [])[i]) || courseName(i)),
-      pars: idx.map(i => num((s.pars || [])[i]) ?? 33),
-      awardN: Math.min(5, Math.max(1, parseInt(s.awardN, 10) || 3)),
-      indivSplit: s.indivSplit === 'all' ? 'all' : 'gender',
-      indiv: s.indiv !== false || s.team !== true, team: s.team === true,
-      teamSplit: s.teamSplit === 'mixed' ? 'mixed' : 'gender',
-      teamAwardN: Math.min(5, Math.max(1, parseInt(s.teamAwardN, 10) || 3)),
-      club: s.club === true,
-      indivPts: Array.isArray(s.indivPts) ? s.indivPts.filter(Number.isInteger) : [6, 4, 3, 2, 1],
-      teamPts: Array.isArray(s.teamPts) ? s.teamPts.filter(Number.isInteger) : [8, 6, 4, 2],
-      clubAwardN: Math.min(5, Math.max(1, parseInt(s.clubAwardN, 10) || 4)),
-    },
-    players: d.players.map(p => ({
-      name: str(p && p.name), gender: ['남', '여'].includes(p && p.gender) ? p.gender : '',
-      club: str(p && p.club), group: str(p && p.group),
-      event: (p && p.event) === '단체' ? '단체' : '개인', team: str(p && p.team),
-      scores: idx.map(i => num(((p && p.scores) || [])[i])),
-    })),
-  };
-}
-
-let state;
-try { state = normalize(JSON.parse(localStorage.getItem(KEY))); } catch (e) { state = defaults(); }
-try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
-
-let savedTimer;
-function save() {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(state));
-    $('saved').textContent = '자동 저장됨';
-    clearTimeout(savedTimer);
-    savedTimer = setTimeout(() => { $('saved').textContent = ''; }, 1500);
-  } catch (e) {
-    $('storage-warn').hidden = false;
-  }
-}
-try { localStorage.setItem(KEY + '-test', '1'); localStorage.removeItem(KEY + '-test'); } catch (e) { $('storage-warn').hidden = false; }
-
-const parSum = () => state.settings.pars.reduce((a, b) => a + b, 0);
-const diff = t => { const d = t - parSum(); return d > 0 ? '+' + d : String(d); };
-
-// 개인전·단체전을 함께 할 때만 선수마다 종목을 고른다
-function eventOf(p) {
-  const s = state.settings;
-  return s.indiv && s.team ? p.event : s.team ? '단체' : '개인';
-}
-const indivPlayers = () => state.players.filter(p => eventOf(p) === '개인');
-
-function status(p) {
-  const filled = p.scores.filter(s => s !== null);
-  if (!p.name.trim() && filled.length === 0) return '';
-  if (filled.some(s => !isScore(s))) return '점수확인';
-  if (!p.name.trim()) return '이름없음';
-  if (eventOf(p) === '단체') return p.team.trim() ? '단체' : '팀없음'; // 팀원은 코스 빈칸 허용
-  return isComplete(p) ? '완료' : '입력중';
-}
-const STATUS_TEXT = { 점수확인: '점수 확인', 이름없음: '이름 없음', 팀없음: '팀 이름 없음', 단체: '단체', 입력중: '입력중', 완료: '완료', '': '' };
-
-function renderHeader() {
-  const s = state.settings;
-  $('h-title').textContent = s.title || '파크골프 대회';
-  $('h-sub').textContent = [s.date, s.place].filter(Boolean).join('  ·  ');
-  document.title = s.title || '파크골프 대회 성적표';
-}
-
-// ---------- 성적 입력 ----------
-function renderEntry() {
-  const s = state.settings, c = s.courses, both = s.indiv && s.team;
-  const opt = (v, x) => `<option${v === x ? ' selected' : ''}>${x}</option>`;
-  const rows = state.players.map((p, i) => `<tr data-i="${i}">
-    <td class="calc">${i + 1}</td>
-    <td><input class="name" data-f="name" value="${esc(p.name)}" aria-label="${i + 1}번 이름"></td>
-    <td><select data-f="gender" aria-label="${i + 1}번 성별"><option value=""></option>${opt(p.gender, '남')}${opt(p.gender, '여')}</select></td>
-    <td><input class="club" data-f="club" list="club-names" value="${esc(p.club)}" aria-label="${i + 1}번 소속"></td>
-    <td><input class="grp" data-f="group" value="${esc(p.group)}" aria-label="${i + 1}번 조"></td>
-    ${both ? `<td><select data-f="event" aria-label="${i + 1}번 종목">${opt(p.event, '개인')}${opt(p.event, '단체')}</select></td>` : ''}
-    ${s.team ? `<td><input class="club" data-f="team" list="team-names" value="${esc(p.team)}" aria-label="${i + 1}번 팀"></td>` : ''}
-    ${p.scores.map((s, k) => `<td><input class="sc" data-f="s${k}" inputmode="numeric" value="${s ?? ''}" aria-label="${i + 1}번 ${esc(c[k])}"></td>`).join('')}
-    <td class="calc total"></td><td class="calc st"></td>
-    <td><button class="del" title="이 줄 지우기" aria-label="${i + 1}번 줄 지우기">✕</button></td>
-  </tr>`).join('');
-  $('entry').innerHTML = `<thead><tr><th>번호</th><th>이름</th><th>성별</th><th>소속</th><th>조</th>
-    ${both ? '<th>종목</th>' : ''}${s.team ? '<th>팀</th>' : ''}${c.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>상태</th><th></th></tr></thead><tbody>${rows}</tbody>`;
-  state.players.forEach((_, i) => updateRow(i));
-  fillNames('club');
-  fillNames('team');
-}
-
-// 소속·팀 칸에서 이미 적은 이름을 골라 쓸 수 있게 (새 이름은 그냥 적으면 됨)
-function fillNames(f) {
-  const names = [...new Set(state.players.map(p => p[f].trim()).filter(Boolean))].sort();
-  $(f + '-names').innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
-}
-
-function updateRow(i) {
-  const p = state.players[i];
-  const tr = $('entry').tBodies[0].rows[i];
-  const st = status(p);
-  tr.querySelector('.total').textContent = isComplete(p) ? p.scores.reduce((a, b) => a + b, 0) : '';
-  const cell = tr.querySelector('.st');
-  cell.textContent = STATUS_TEXT[st];
-  cell.className = 'calc st st-' + st;
-  tr.querySelectorAll('.sc').forEach((inp, k) => inp.classList.toggle('bad', p.scores[k] !== null && !isScore(p.scores[k])));
-}
-
-onBoth($('entry'), e => {
-  const tr = e.target.closest('tr[data-i]');
-  if (!tr) return;
-  const i = +tr.dataset.i, f = e.target.dataset.f, p = state.players[i];
-  if (f.startsWith('s')) {
-    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 2);
-    p.scores[+f[1]] = e.target.value === '' ? null : parseInt(e.target.value, 10);
-  } else {
-    p[f] = e.target.value;
-  }
-  if ((f === 'club' || f === 'team') && e.type === 'change') fillNames(f); // 다 적고 칸을 벗어날 때만 목록 갱신 (적는 중간 글자는 안 넣음)
-  updateRow(i);
-  save();
-});
-
-$('entry').addEventListener('keydown', e => {
-  if (e.key !== 'Enter' || !e.target.dataset.f) return;
-  e.preventDefault();
-  const next = e.target.closest('tr').nextElementSibling;
-  if (next) next.querySelector(`[data-f="${e.target.dataset.f}"]`).focus();
-});
-
-$('entry').addEventListener('click', e => {
-  if (!e.target.classList.contains('del')) return;
-  const i = +e.target.closest('tr').dataset.i, p = state.players[i];
-  if (status(p) !== '' && !confirm(`${p.name || (i + 1) + '번'} 줄을 지울까요?`)) return;
-  state.players.splice(i, 1);
-  if (state.players.length === 0) state.players.push(blankPlayer());
-  save();
-  renderEntry();
-});
-
-$('add-rows').onclick = () => {
-  for (let k = 0; k < 10; k++) state.players.push(blankPlayer());
-  save();
-  renderEntry();
-};
-
-// ---------- 순위표 ----------
-function rankRow(p, rank, cols, mark) {
-  return `<tr class="${rank <= 3 ? 'r' + rank : ''}">${[rank + '위' + (mark ? ' (연장전)' : ''), ...cols(p)].map(v => `<td>${esc(v)}</td>`).join('')}</tr>`;
-}
-
-// 1위 동타는 현장 연장전(서든데스)으로 가린다. 앱은 표시만 한다.
-function playoff(ranked, byGender) {
-  return new Set((byGender ? ['남', '여'] : [null]).flatMap(g => {
-    const f = ranked.filter(p => (byGender ? p.divRank : p.rank) === 1 && (!g || p.gender === g));
-    return f.length > 1 ? f : [];
-  }));
-}
-const divText = (q, po) => q.divRank ? `${q.gender} ${q.divRank}위${po.has(q) ? ' (연장전)' : ''}` : '';
-
-function renderRank() {
-  const s = state.settings;
-  const tie = s.courses.slice(1).reverse();
-  $('rule').textContent = (tie.length ? `합계가 같으면 ${tie.join(', ')} 순으로 타수가 적은 쪽이 앞섭니다. 모두 같으면` : '합계가 같으면')
-    + ' 공동 순위입니다.';
-  $('stats').innerHTML = '';
-  $('indiv-rank').hidden = !s.indiv;
-  $('team-rank').hidden = !s.team;
-  $('club-rank').hidden = !s.club;
-  if (s.indiv) renderIndivRank();
-  if (s.team) renderTeamRank();
-  if (s.club) renderClubRank();
-}
-
-// 꺼진 종목은 점수에 넣지 않는다
-function clubRanking() {
-  const s = state.settings;
-  return clubStandings(s.indiv ? rankPlayers(indivPlayers()) : [], s.team ? teamRanking() : [], {
-    indivByGender: s.indivSplit === 'gender', teamByGender: s.teamSplit === 'gender', indivPts: s.indivPts, teamPts: s.teamPts,
-  });
-}
-
-function renderClubRank() {
-  const list = clubRanking();
-  if (!list.length) { $('club-table').innerHTML = '<tr><td class="empty">아직 순위가 나온 클럽이 없습니다.</td></tr>'; return; }
-  $('club-table').innerHTML = '<thead><tr><th>순위</th><th>클럽</th><th>총점</th><th>단체전 타수 합</th><th>점수 내역</th></tr></thead><tbody>'
-    + list.map(c => rankRow(c, c.rank, q => [q.club, q.points, q.teamCount ? q.teamStrokes : '', q.detail.join(' / ')])).join('') + '</tbody>';
-}
-
-const teamPlayers = () => state.players.filter(p => eventOf(p) === '단체');
-const teamRanking = () => rankTeams(teamPlayers(), state.settings.courses.length);
-const memberText = t => t.members.map(m => `${m.name}(${m.scores.map(x => x ?? '-').join('·')})`).join(', ');
-
-function teamWarn(t) {
-  const byGender = state.settings.teamSplit === 'gender';
-  return [byGender && t.gender === '' ? '성별 없음' : '', byGender && t.gender === '혼성' ? '남녀 섞임' : '', t.mixedClub ? '소속 다름' : '']
-    .filter(Boolean).join(', ');
-}
-
-function renderTeamRank() {
-  const s = state.settings, byGender = s.teamSplit === 'gender', ranked = teamRanking(), po = playoff(ranked, byGender);
-  const waiting = makeTeams(teamPlayers(), s.courses.length).filter(t => !isComplete(t));
-  $('team-wait').textContent = waiting.length
-    ? `입력중인 팀 (모든 코스에 팀원 점수가 하나 이상 있어야 순위에 듭니다): ${waiting.map(t => t.name + (t.badScore ? '(점수 확인)' : '')).join(', ')}` : '';
-  if (!ranked.length) { $('team-table').innerHTML = '<tr><td class="empty">아직 순위가 나온 팀이 없습니다.</td></tr>'; return; }
-  $('team-table').innerHTML = `<thead><tr><th>순위</th><th>팀</th><th>소속</th><th>구분</th><th>팀원 (코스별 점수)</th>
-    ${s.courses.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>기준타 대비</th>${byGender ? '<th>부문 순위</th>' : ''}<th>확인</th></tr></thead><tbody>`
-    + ranked.map(t => rankRow(t, t.rank, q => [q.name, q.club, q.gender, memberText(q), ...q.scores, q.total, diff(q.total),
-      ...(byGender ? [divText(q, po)] : []), teamWarn(q)], !byGender && po.has(t))).join('') + '</tbody>';
-}
-
-function renderIndivRank() {
-  const s = state.settings, ranked = rankPlayers(indivPlayers()), byGender = s.indivSplit === 'gender', po = playoff(ranked, byGender);
-  const named = indivPlayers().filter(p => p.name.trim());
-  const waiting = named.filter(p => !isComplete(p)).length;
-  $('stats').innerHTML = `<span>개인전 참가 ${named.length}명</span><span>순위 확정 ${ranked.length}명</span>`
-    + (waiting ? `<span class="st-입력중">입력중 ${waiting}명</span>` : '');
-  if (!ranked.length) { $('rank-table').innerHTML = `<tr><td class="empty">아직 ${s.courses.length}개 코스를 모두 입력한 선수가 없습니다.</td></tr>`; return; }
-  $('rank-table').innerHTML = `<thead><tr><th>순위</th><th>이름</th><th>성별</th><th>소속</th><th>조</th>
-    ${s.courses.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>기준타 대비</th>${byGender ? '<th>부문 순위</th>' : ''}</tr></thead><tbody>`
-    + ranked.map(p => rankRow(p, p.rank, q => [q.name, q.gender, q.club, q.group, ...q.scores, q.total, diff(q.total),
-      ...(byGender ? [divText(q, po)] : [])], !byGender && po.has(p))).join('') + '</tbody>';
-}
-
-// ---------- 시상자 ----------
-// key: 남녀 따로면 'divRank', 아니면 'rank'
-function awardBlocks(prefix, a, key, heads, cols, sudden = true) {
-  return Object.entries(a).map(([label, list]) => {
-    const tie1 = sudden && list.filter(p => p[key] === 1).length > 1;
-    const body = list.length
-      ? `<table><thead><tr><th>순위</th>${heads.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`
-        + list.map(p => rankRow(p, p[key], cols, tie1 && p[key] === 1)).join('') + '</tbody></table>'
-      : '<p class="empty">해당 없음</p>';
-    return `<div class="award"><h3>${prefix} ${label}</h3>${body}</div>`;
-  }).join('');
-}
-
-function renderAward() {
-  const s = state.settings;
-  let html = '<p class="hint">공동 순위면 모두 표시합니다. 개인전·단체전 공동 1위는 연장전(서든데스)으로 가립니다.</p>';
-  const ig = s.indivSplit === 'gender', tg = s.teamSplit === 'gender';
-  if (s.indiv) html += awardBlocks(`개인전 (${s.awardN}등까지)`, awards(rankPlayers(indivPlayers()), s.awardN, ig), ig ? 'divRank' : 'rank',
-    ['이름', '성별', '소속', '조', '합계', '기준타 대비'], q => [q.name, q.gender, q.club, q.group, q.total, diff(q.total)]);
-  if (s.team) html += awardBlocks(`단체전 (${s.teamAwardN}등까지)`, awards(teamRanking(), s.teamAwardN, tg), tg ? 'divRank' : 'rank',
-    ['팀', '소속', '팀원', '합계', '기준타 대비'], q => [q.name, q.club, q.members.map(m => m.name).join(', '), q.total, diff(q.total)]);
-  if (s.club) html += awardBlocks(`클럽 종합 (${s.clubAwardN}등까지)`, { '': clubRanking().filter(c => c.rank <= s.clubAwardN && c.points > 0) }, 'rank',
-    ['클럽', '총점'], q => [q.club, q.points], false);
-  $('award-list').innerHTML = html;
-}
-
-// ---------- 대회 설정 ----------
-function renderSetting() {
-  const s = state.settings;
-  ['title', 'date', 'place', 'awardN', 'indivSplit', 'teamSplit', 'teamAwardN', 'clubAwardN'].forEach(k => { document.querySelector(`[data-s="${k}"]`).value = s[k]; });
-  ['indivPts', 'teamPts'].forEach(k => { document.querySelector(`[data-pts="${k}"]`).value = s[k].join(', '); });
-  ['indiv', 'team', 'club'].forEach(k => { document.querySelector(`[data-s="${k}"]`).checked = s[k]; });
-  document.querySelectorAll('[data-show]').forEach(el => { el.hidden = !s[el.dataset.show]; });
-  $('course-table').innerHTML = '<tr><th>순서</th><th>코스 이름</th><th>기준타수</th></tr>'
-    + s.courses.map((c, i) => `<tr><td>${i + 1}번째</td><td><input data-c="${i}" value="${esc(c)}"></td>
-      <td><input class="par" data-p="${i}" inputmode="numeric" value="${s.pars[i]}"></td></tr>`).join('');
-  $('add-course').disabled = s.courses.length >= MAX_COURSES;
-  $('del-course').disabled = s.courses.length <= 1;
-}
-
-$('add-course').onclick = () => {
-  const s = state.settings;
-  s.courses.push(courseName(s.courses.length));
-  s.pars.push(33);
-  state.players.forEach(p => p.scores.push(null));
-  save();
-  renderSetting();
-};
-
-$('del-course').onclick = () => {
-  const s = state.settings, k = s.courses.length - 1;
-  if (state.players.some(p => p.scores[k] !== null)
-    && !confirm(`${s.courses[k]}에 적힌 점수가 모두 지워집니다.\n계속할까요?`)) return;
-  s.courses.pop();
-  s.pars.pop();
-  state.players.forEach(p => p.scores.pop());
-  save();
-  renderSetting();
-};
-
-onBoth($('setting'), e => {
-  const t = e.target, s = state.settings;
-  if (t.type === 'checkbox') {
-    s[t.dataset.s] = t.checked;
-    if (!s.indiv && !s.team) s[t.dataset.s] = true; // 둘 중 하나는 켜져 있어야 함
-    renderSetting();
-  } else if (t.dataset.pts) s[t.dataset.pts] = t.value.split(/[^0-9]+/).filter(Boolean).map(Number);
-  else if (t.dataset.s) s[t.dataset.s] = ['awardN', 'teamAwardN', 'clubAwardN'].includes(t.dataset.s) ? +t.value : t.value;
-  else if (t.dataset.c) s.courses[+t.dataset.c] = t.value;
-  else if (t.dataset.p) {
-    t.value = t.value.replace(/\D/g, '').slice(0, 2);
-    const v = parseInt(t.value, 10);
-    if (!(v >= 9 && v <= 99)) return; // 다 적을 때까지 저장하지 않음
-    s.pars[+t.dataset.p] = v;
-  } else return;
-  save();
-  renderHeader();
-});
-
-$('reset').onclick = () => {
-  if (!confirm('모든 선수와 점수가 지워집니다. 되돌릴 수 없습니다.\n계속할까요?')) return;
-  state.players = Array.from({ length: 20 }, blankPlayer);
-  save();
-  showAll();
-};
-
-// ---------- 탭 ----------
-const RENDER = { input: renderEntry, rank: renderRank, award: renderAward, setting: renderSetting };
-function showTab(tab) {
-  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-  document.querySelectorAll('section').forEach(sec => sec.classList.toggle('on', sec.id === tab));
-  RENDER[tab]();
-  try { sessionStorage.setItem(KEY + '-tab', tab); } catch (e) {}
-}
-function showAll() { renderHeader(); showTab(document.querySelector('nav button.on')?.dataset.tab || 'input'); }
-document.querySelector('nav').onclick = e => { if (e.target.dataset.tab) showTab(e.target.dataset.tab); };
-
-renderHeader();
-let startTab = 'input';
-try { startTab = sessionStorage.getItem(KEY + '-tab') || 'input'; } catch (e) {}
-showTab(RENDER[startTab] ? startTab : 'input');
-</script>
 </body>
 </html>

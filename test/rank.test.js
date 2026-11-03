@@ -1,7 +1,7 @@
 // 실행: node --test test/
-const test = require('node:test');
-const assert = require('node:assert');
-const { rankPlayers, awards, makeTeams, rankTeams, clubStandings, isScore } = require('../docs/rank.js');
+import test from 'node:test';
+import assert from 'node:assert';
+import { rankPlayers, awards, makeTeams, rankTeams, clubStandings, isScore, sortRows, moveCell, teamPicks } from '../docs/rank.js';
 
 const P = (name, gender, ...scores) => ({ name, gender, club: '', group: '', scores });
 const T = (team, club, name, gender, ...scores) => ({ name, gender, club, group: '', team, scores });
@@ -152,4 +152,70 @@ test('클럽 종합: 통합 순위 기준 점수, 점수표보다 낮은 순위�
   const r = clubStandings(indiv, [], { indivByGender: false, teamByGender: true, indivPts: [6, 4], teamPts: [] });
   assert.deepStrictEqual(r.map(c => [c.rank, c.club, c.points, c.detail]),
     [[1, '부계', 6, ['개인 1위 갑 6점']], [2, '한티', 4, ['개인 2위 을 4점']]]);
+});
+
+// 입력표 정렬: id 는 줄 번호, 빈칸은 null
+const ROWS = [
+  { name: '정', group: '2', total: 130 }, { name: '갑', group: '1', total: 128 }, { name: '', group: null, total: null },
+  { name: '을', group: '2', total: 128 }, { name: '병', group: '1', total: 135 },
+];
+const sortBy = keys => sortRows(ROWS.keys(), keys, (i, k) => ROWS[i][k] || null).map(i => ROWS[i].name || '빈칸');
+
+test('정렬: 기준 없으면 원래 순서', () => {
+  assert.deepStrictEqual(sortBy([]), ['정', '갑', '빈칸', '을', '병']);
+});
+
+test('정렬: 숫자 오름·내림, 빈칸은 방향과 상관없이 아래, 같으면 원래 순서', () => {
+  assert.deepStrictEqual(sortBy([{ k: 'total', dir: 1 }]), ['갑', '을', '정', '병', '빈칸']);
+  assert.deepStrictEqual(sortBy([{ k: 'total', dir: -1 }]), ['병', '정', '갑', '을', '빈칸']);
+});
+
+test('정렬: 글자는 가나다순', () => {
+  assert.deepStrictEqual(sortBy([{ k: 'name', dir: 1 }]), ['갑', '병', '을', '정', '빈칸']);
+});
+
+test('정렬: 여러 기준은 앞 기준이 같을 때만 다음 기준으로', () => {
+  assert.deepStrictEqual(sortBy([{ k: 'group', dir: 1 }, { k: 'total', dir: 1 }]), ['갑', '병', '을', '정', '빈칸']);
+  assert.deepStrictEqual(sortBy([{ k: 'group', dir: -1 }, { k: 'total', dir: -1 }]), ['정', '을', '병', '갑', '빈칸']);
+  assert.deepStrictEqual(sortBy([{ k: 'total', dir: 1 }, { k: 'name', dir: -1 }]), ['을', '갑', '정', '병', '빈칸']);
+});
+
+test('팀 점수 채택 표시: 코스마다 최저타, 같은 최저타는 모두, 빈칸·오타 코스는 표시 안 함', () => {
+  const [t] = makeTeams([
+    T('A', '부계', '갑', '남', 33, 35, 34, 40),
+    T('A', '부계', '을', '남', 32, 35, null, 5),
+    T('A', '부계', '병', '남', 34, 36, 36, 31),
+  ], 4);
+  assert.deepStrictEqual(teamPicks(t), [
+    [false, true, true, false],
+    [true, true, false, false],
+    [false, false, false, false],
+  ]);
+});
+
+// 입력표 방향키: 3줄, 적는 칸은 1·2·5·6번 칸 (0 번호, 3·4 는 계산 칸이라 건너뜀)
+const COLS = [1, 2, 5, 6];
+const mv = (key, r, c, atStart = true, atEnd = true) => moveCell(key, r, c, 3, COLS, atStart, atEnd);
+
+test('방향키: ↑↓·Enter 는 같은 칸 위아래 줄, 표 끝이면 제자리', () => {
+  assert.deepStrictEqual(mv('ArrowDown', 0, 5), [1, 5]);
+  assert.deepStrictEqual(mv('Enter', 1, 5), [2, 5]);
+  assert.deepStrictEqual(mv('ArrowUp', 1, 5), [0, 5]);
+  assert.strictEqual(mv('ArrowDown', 2, 5), null);
+  assert.strictEqual(mv('Enter', 2, 5), null);
+  assert.strictEqual(mv('ArrowUp', 0, 5), null);
+});
+
+test('방향키: ←→ 는 계산 칸을 건너뛰고, 줄 끝이면 제자리', () => {
+  assert.deepStrictEqual(mv('ArrowRight', 0, 2), [0, 5]);
+  assert.deepStrictEqual(mv('ArrowLeft', 0, 5), [0, 2]);
+  assert.strictEqual(mv('ArrowLeft', 0, 1), null);
+  assert.strictEqual(mv('ArrowRight', 0, 6), null);
+});
+
+test('방향키: 글자 중간이면 ←→ 는 칸 이동 안 함, 다른 키도 안 함', () => {
+  assert.strictEqual(mv('ArrowLeft', 0, 5, false, true), undefined);
+  assert.strictEqual(mv('ArrowRight', 0, 5, true, false), undefined);
+  assert.strictEqual(mv('a', 0, 5), undefined);
+  assert.strictEqual(mv('Tab', 0, 5), undefined);
 });
