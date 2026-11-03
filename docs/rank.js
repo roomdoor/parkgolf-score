@@ -62,6 +62,38 @@ function makeTeams(players, nCourses) {
 // 팀 순위는 개인과 같은 규칙. 남자팀·여자팀이면 divRank 도 붙는다.
 const rankTeams = (players, nCourses) => rankPlayers(makeTeams(players, nCourses));
 
+// 클럽 종합: 개인·단체 순위를 점수(pts[순위-1])로 바꿔 소속별 합산. 공동 순위는 같은 점수.
+// 동점이면 단체전 타수 합이 적은 클럽, 남녀 따로면 그다음 여자팀 타수 합이 적은 클럽. 그래도 같으면 공동.
+function clubStandings(indiv, teams, o) {
+  const clubs = new Map();
+  const get = c => {
+    if (!clubs.has(c)) clubs.set(c, { club: c, points: 0, detail: [], teamStrokes: 0, womenStrokes: 0, hasTeam: false });
+    return clubs.get(c);
+  };
+  const add = (list, byGender, pts, label) => {
+    for (const x of list) {
+      const c = x.club.trim();
+      if (!c) continue;
+      const r = byGender ? x.divRank : x.rank, row = get(c), pt = (r && pts[r - 1]) || 0;
+      if (pt) { row.points += pt; row.detail.push(`${label}${byGender ? ' ' + x.gender : ''} ${r}위 ${x.name} ${pt}점`); }
+    }
+  };
+  add(indiv, o.indivByGender, o.indivPts, '개인');
+  add(teams, o.teamByGender, o.teamPts, '단체');
+  for (const t of teams) {
+    if (!t.club) continue;
+    const row = get(t.club);
+    row.hasTeam = true;
+    row.teamStrokes += t.total;
+    if (t.gender === '여') row.womenStrokes += t.total;
+  }
+  const key = r => [-r.points, r.hasTeam ? r.teamStrokes : Infinity, o.teamByGender && r.womenStrokes ? r.womenStrokes : Infinity];
+  const cmp = (a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < 3; i++) if (ka[i] !== kb[i]) return ka[i] - kb[i]; return 0; };
+  const list = [...clubs.values()].sort(cmp);
+  list.forEach((r, i) => { r.rank = i > 0 && cmp(r, list[i - 1]) === 0 ? list[i - 1].rank : i + 1; });
+  return list;
+}
+
 // 시상자: 순위가 n 이하인 선수 전부 (공동 순위면 n명을 넘을 수 있음)
 // byGender 면 남자부·여자부 따로, 아니면 통합 하나
 function awards(ranked, n, byGender = true) {
@@ -72,4 +104,4 @@ function awards(ranked, n, byGender = true) {
   };
 }
 
-if (typeof module !== 'undefined') module.exports = { rankPlayers, awards, isComplete, isScore, makeTeams, rankTeams };
+if (typeof module !== 'undefined') module.exports = { rankPlayers, awards, isComplete, isScore, makeTeams, rankTeams, clubStandings };

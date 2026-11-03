@@ -1,7 +1,7 @@
 // 실행: node --test test/
 const test = require('node:test');
 const assert = require('node:assert');
-const { rankPlayers, awards, makeTeams, rankTeams } = require('../docs/rank.js');
+const { rankPlayers, awards, makeTeams, rankTeams, clubStandings } = require('../docs/rank.js');
 
 const P = (name, gender, ...scores) => ({ name, gender, club: '', group: '', scores });
 const T = (team, club, name, gender, ...scores) => ({ name, gender, club, group: '', team, scores });
@@ -62,6 +62,28 @@ test('단체전: 코스마다 팀원 중 최저타가 팀 점수, 팀 점수 하
   assert.deepStrictEqual(r.map(t => [t.rank, t.name, t.total, t.gender, t.divRank]),
     [[1, '남천1', 58, '여', 1], [2, '부계1', 59, '남', 1], [3, '한티1', 60, '남', 2]]);
   assert.deepStrictEqual(Object.keys(awards(r, 3)), ['남자부', '여자부']);
+});
+
+test('클럽 종합: 순위 점수 합산, 동점이면 단체 타수 합 > 여자팀 타수', () => {
+  const C = (club, name, gender, ...scores) => ({ ...P(name, gender, ...scores), club });
+  const indiv = rankPlayers([
+    C('부계', '갑', '남', 30, 30), C('한티', '을', '남', 31, 31), C('부계', '병', '여', 30, 30), C('한티', '정', '여', 30, 30),
+  ]); // 남: 부계 1위 6, 한티 2위 4 / 여: 부계·한티 공동 1위 6씩
+  const teams = rankTeams([
+    T('부계남', '부계', 'a', '남', 30, 30), T('한티남', '한티', 'b', '남', 29, 29), // 남: 한티 1위 8, 부계 2위 6
+    T('부계여', '부계', 'c', '여', 28, 28), T('한티여', '한티', 'd', '여', 29, 30), // 여: 부계 1위 8, 한티 2위 6
+  ], 2);
+  const o = { indivByGender: true, teamByGender: true, indivPts: [6, 4, 3, 2, 1], teamPts: [8, 6, 4, 2] };
+  const r = clubStandings(indiv, teams, o);
+  // 부계 6+6+6+8=26, 한티 4+6+8+6=24
+  assert.deepStrictEqual(r.map(c => [c.rank, c.club, c.points]), [[1, '부계', 26], [2, '한티', 24]]);
+
+  // 동점: 단체 타수 합 같으면(116 vs 116) 여자팀 타수 적은 쪽(부계 56 < 한티 58)
+  const tie = clubStandings([], rankTeams([
+    T('부계남', '부계', 'a', '남', 30, 30), T('한티남', '한티', 'b', '남', 29, 29),
+    T('부계여', '부계', 'c', '여', 28, 28), T('한티여', '한티', 'd', '여', 29, 29),
+  ], 2), { ...o, teamPts: [5, 5] });
+  assert.deepStrictEqual(tie.map(c => [c.rank, c.club, c.teamStrokes, c.womenStrokes]), [[1, '부계', 116, 56], [2, '한티', 116, 58]]);
 });
 
 test('단체전: 섞인 팀은 혼성, 소속이 다르면 표시', () => {
