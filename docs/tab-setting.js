@@ -66,7 +66,7 @@ function samplePlayers() {
   const add = (gender, club, event, team = '') => {
     const i = players.length; // 이름은 80명마다 한 번 겹치니 그보다 적게 만든다 (지금 최대 76명)
     players.push({ name: SUR[i % 20] + GIVEN[gender][(i + Math.floor(i / 20)) % 12], gender, club, group: `${Math.floor(i / 4) + 1}조`, event, team,
-      scores: s.pars.map(par => Math.max(9, par - 3 + Math.floor(Math.random() * 11))) });
+      scores: s.pars.map(par => Math.min(99, Math.max(9, par - 3 + Math.floor(Math.random() * 11)))) });
   };
   if (s.indiv) for (let i = 0; i < 40; i++) add(i < 24 ? '남' : '여', CLUBS[i % CLUBS.length], '개인');
   if (s.team) for (const club of CLUBS) {
@@ -77,7 +77,7 @@ function samplePlayers() {
 }
 
 $('sample').onclick = () => {
-  if (state.players.some(p => p.name.trim() || p.scores.some(x => x !== null))
+  if (state.players.some(p => [p.name, p.club, p.group, p.team].some(v => v.trim()) || p.scores.some(x => x !== null))
     && !confirm('지금 선수와 점수가 예시 선수로 바뀝니다. 되돌릴 수 없습니다.\n계속할까요?')) return;
   state.players = samplePlayers();
   save();
