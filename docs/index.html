@@ -305,9 +305,18 @@ $('add-rows').onclick = () => {
 };
 
 // ---------- 순위표 ----------
-function rankRow(p, rank, cols) {
-  return `<tr class="${rank <= 3 ? 'r' + rank : ''}">${[rank + '위', ...cols(p)].map(v => `<td>${esc(v)}</td>`).join('')}</tr>`;
+function rankRow(p, rank, cols, mark) {
+  return `<tr class="${rank <= 3 ? 'r' + rank : ''}">${[rank + '위' + (mark ? ' (연장전)' : ''), ...cols(p)].map(v => `<td>${esc(v)}</td>`).join('')}</tr>`;
 }
+
+// 1위 동타는 현장 연장전(서든데스)으로 가린다. 앱은 표시만 한다.
+function playoff(ranked, byGender) {
+  return new Set((byGender ? ['남', '여'] : [null]).flatMap(g => {
+    const f = ranked.filter(p => (byGender ? p.divRank : p.rank) === 1 && (!g || p.gender === g));
+    return f.length > 1 ? f : [];
+  }));
+}
+const divText = (q, po) => q.divRank ? `${q.gender} ${q.divRank}위${po.has(q) ? ' (연장전)' : ''}` : '';
 
 function renderRank() {
   const s = state.settings;
@@ -348,7 +357,7 @@ function teamWarn(t) {
 }
 
 function renderTeamRank() {
-  const s = state.settings, byGender = s.teamSplit === 'gender', ranked = teamRanking();
+  const s = state.settings, byGender = s.teamSplit === 'gender', ranked = teamRanking(), po = playoff(ranked, byGender);
   const waiting = makeTeams(teamPlayers(), s.courses.length).filter(t => !isComplete(t));
   $('team-wait').textContent = waiting.length
     ? `입력중인 팀 (모든 코스에 팀원 점수가 하나 이상 있어야 순위에 듭니다): ${waiting.map(t => t.name).join(', ')}` : '';
@@ -356,11 +365,11 @@ function renderTeamRank() {
   $('team-table').innerHTML = `<thead><tr><th>순위</th><th>팀</th><th>소속</th><th>구분</th><th>팀원 (코스별 점수)</th>
     ${s.courses.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>기준타 대비</th>${byGender ? '<th>부문 순위</th>' : ''}<th>확인</th></tr></thead><tbody>`
     + ranked.map(t => rankRow(t, t.rank, q => [q.name, q.club, q.gender, memberText(q), ...q.scores, q.total, diff(q.total),
-      ...(byGender ? [q.divRank ? `${q.gender} ${q.divRank}위` : ''] : []), teamWarn(q)])).join('') + '</tbody>';
+      ...(byGender ? [divText(q, po)] : []), teamWarn(q)], !byGender && po.has(t))).join('') + '</tbody>';
 }
 
 function renderIndivRank() {
-  const s = state.settings, ranked = rankPlayers(indivPlayers()), byGender = s.indivSplit === 'gender';
+  const s = state.settings, ranked = rankPlayers(indivPlayers()), byGender = s.indivSplit === 'gender', po = playoff(ranked, byGender);
   const named = indivPlayers().filter(p => p.name.trim());
   const waiting = named.filter(p => !isComplete(p)).length;
   $('stats').innerHTML = `<span>개인전 참가 ${named.length}명</span><span>순위 확정 ${ranked.length}명</span>`
@@ -369,16 +378,17 @@ function renderIndivRank() {
   $('rank-table').innerHTML = `<thead><tr><th>순위</th><th>이름</th><th>성별</th><th>소속</th><th>조</th>
     ${s.courses.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>기준타 대비</th>${byGender ? '<th>부문 순위</th>' : ''}</tr></thead><tbody>`
     + ranked.map(p => rankRow(p, p.rank, q => [q.name, q.gender, q.club, q.group, ...q.scores, q.total, diff(q.total),
-      ...(byGender ? [q.divRank ? `${q.gender} ${q.divRank}위` : ''] : [])])).join('') + '</tbody>';
+      ...(byGender ? [divText(q, po)] : [])], !byGender && po.has(p))).join('') + '</tbody>';
 }
 
 // ---------- 시상자 ----------
-function awardBlocks(prefix, a, heads, cols) {
+function awardBlocks(prefix, a, heads, cols, sudden = true) {
   return Object.entries(a).map(([label, list]) => {
     const key = label === '남자부' || label === '여자부' ? 'divRank' : 'rank';
+    const tie1 = sudden && list.filter(p => p[key] === 1).length > 1;
     const body = list.length
       ? `<table><thead><tr><th>순위</th>${heads.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`
-        + list.map(p => rankRow(p, p[key], cols)).join('') + '</tbody></table>'
+        + list.map(p => rankRow(p, p[key], cols, tie1 && p[key] === 1)).join('') + '</tbody></table>'
       : '<p class="empty">해당 없음</p>';
     return `<div class="award"><h3>${prefix} ${label}</h3>${body}</div>`;
   }).join('');
@@ -386,13 +396,13 @@ function awardBlocks(prefix, a, heads, cols) {
 
 function renderAward() {
   const s = state.settings;
-  let html = '<p class="hint">공동 순위면 모두 표시합니다.</p>';
+  let html = '<p class="hint">공동 순위면 모두 표시합니다. 개인전·단체전 공동 1위는 연장전(서든데스)으로 가립니다.</p>';
   if (s.indiv) html += awardBlocks(`개인전 (${s.awardN}등까지)`, awards(rankPlayers(indivPlayers()), s.awardN, s.indivSplit === 'gender'),
     ['이름', '성별', '소속', '조', '합계', '기준타 대비'], q => [q.name, q.gender, q.club, q.group, q.total, diff(q.total)]);
   if (s.team) html += awardBlocks(`단체전 (${s.teamAwardN}등까지)`, awards(teamRanking(), s.teamAwardN, s.teamSplit === 'gender'),
     ['팀', '소속', '팀원', '합계', '기준타 대비'], q => [q.name, q.club, q.members.map(m => m.name).join(', '), q.total, diff(q.total)]);
   if (s.club) html += awardBlocks(`클럽 종합 (${s.clubAwardN}등까지)`, { '': clubRanking().filter(c => c.rank <= s.clubAwardN && c.points > 0) },
-    ['클럽', '총점'], q => [q.club, q.points]);
+    ['클럽', '총점'], q => [q.club, q.points], false);
   $('award-list').innerHTML = html;
 }
 
