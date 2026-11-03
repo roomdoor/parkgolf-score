@@ -70,6 +70,8 @@ tr.r3 td:first-child { color:#9a5a32; }
 #rank-table td:nth-child(2), #team-table td:nth-child(2), .award td:nth-child(2) { font-weight:700; }
 #team-table th, #team-table td { white-space:nowrap; }
 #rank td:first-child, #rank-table td, #club-table td:nth-child(2) { white-space:nowrap; }
+/* 클럽 점수 내역: 한 줄에 하나씩 */
+#rank #club-table td:last-child { text-align:left; font-size:17px; line-height:1.7; color:#3d4a41; }
 #team-table td:nth-child(5) { text-align:left; line-height:1.7; }
 #rank tr.div-head td { background:var(--cream) !important; text-align:left; font-family:var(--serif); font-weight:800; font-size:20px; color:var(--green); padding-top:18px; }
 b.pick { background:var(--green-l); color:#fff; padding:0 5px; border-radius:4px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
@@ -105,7 +107,7 @@ body.tv #rank tr.r1 td { background:#1d3a2a !important; }
 body.tv #rank tr.r1 td:first-child { color:#facc15; box-shadow:inset 6px 0 0 #facc15; }
 body.tv #rank tr.r2 td:first-child { color:#cbd5e1; }
 body.tv #rank tr.r3 td:first-child { color:#fb923c; }
-body.tv #rank #team-table td:nth-child(5) { font-size:22px; }
+body.tv #rank #team-table td:nth-child(5), body.tv #rank #club-table td:last-child { font-size:22px; }
 /* 단체전 '확인' 칸(남녀 섞임 등)은 운영자용이라 TV에선 숨긴다 */
 body.tv #team-table tr:not(.div-head) > :last-child { display:none; }
 body.tv #rank #team-table tr:not(.div-head) > td:nth-last-child(2) { border-radius:0 12px 12px 0; }

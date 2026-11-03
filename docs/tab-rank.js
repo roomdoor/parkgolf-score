@@ -40,7 +40,7 @@ function renderClubRank() {
   const list = clubRanking();
   if (!list.length) { $('club-table').innerHTML = '<tr><td class="empty">아직 순위가 나온 클럽이 없습니다.</td></tr>'; return; }
   $('club-table').innerHTML = '<thead><tr><th>순위</th><th>클럽</th><th>총점</th><th>단체전 타수 합</th><th>점수 내역</th></tr></thead><tbody>'
-    + list.map(c => rankRow(c, c.rank, q => [q.club, q.points, q.teamCount ? q.teamStrokes : '', q.detail.join(' / ')])).join('') + '</tbody>';
+    + list.map(c => rankRow(c, c.rank, q => [q.club, q.points, q.teamCount ? q.teamStrokes : '', { html: q.detail.map(esc).join('<br>') }])).join('') + '</tbody>';
 }
 
 // 팀원 한 사람씩 한 줄. 팀 점수로 채택된 점수(코스마다 최저타)는 칠한다
@@ -59,7 +59,7 @@ function renderTeamRank() {
   $('team-wait').textContent = waiting.length
     ? `입력중인 팀 (모든 코스에 팀원 점수가 하나 이상 있어야 순위에 듭니다): ${waiting.map(t => t.name + (t.badScore ? '(점수 확인)' : '')).join(', ')}` : '';
   if (!ranked.length) { $('team-table').innerHTML = '<tr><td class="empty">아직 순위가 나온 팀이 없습니다.</td></tr>'; return; }
-  $('team-table').innerHTML = `<thead><tr><th>순위</th><th>팀</th><th>소속</th><th>구분</th><th>팀원 (코스별 점수, <b class="pick">색칠</b>=팀 점수)</th>
+  $('team-table').innerHTML = `<thead><tr><th>순위</th><th>팀</th><th>소속</th><th>구분</th><th>팀원</th>
     ${s.courses.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>기준타 대비</th><th>확인</th></tr></thead>`
     + rankBody(ranked, q => [q.name, q.club, q.gender, memberText(q), ...q.scores, q.total, diff(q.total), teamWarn(q)],
       po, byGender, '부문 순위 없음 (성별 없음·남녀 섞임)');
