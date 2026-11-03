@@ -55,6 +55,9 @@ input, select { font-size:19px; font-family:inherit; }
 #entry .name, #entry .club { width:6em; }
 #entry .grp { width:3.5em; }
 #entry .sc { width:3em; text-align:center; }
+/* 소속만 왼쪽(이름 길이가 제각각), 나머지는 가운데 */
+#entry [data-f=name], #entry [data-f=group], #entry [data-f=team] { text-align:center; }
+#entry select { text-align-last:center; }
 #entry input.pick { background:var(--green-l); border-color:var(--green); color:#fff; font-weight:bold; }
 #entry input.bad { border:2px solid var(--red); background:#fdecea; color:var(--red); }
 .st-입력중 { color:var(--orange); font-weight:bold; }
