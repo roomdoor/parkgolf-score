@@ -31,7 +31,7 @@
   #entry .sc { width:3em; text-align:center; }
   #entry input.bad { border:2px solid var(--red); background:#ffebee; }
   .st-입력중 { color:var(--orange); font-weight:bold; }
-  .st-이름없음, .st-점수확인 { color:var(--red); font-weight:bold; }
+  .st-이름없음, .st-점수확인, .st-팀없음 { color:var(--red); font-weight:bold; }
   .st-완료 { color:var(--green); }
   .btn { font-size:18px; padding:10px 18px; border-radius:8px; border:1px solid #999; background:#fff; cursor:pointer; font-family:inherit; }
   .btn.main { background:var(--green); color:#fff; border-color:var(--green); font-weight:bold; }
@@ -49,6 +49,8 @@
   .form input[type=text], .form input[type=date] { width:22em; max-width:100%; padding:8px; }
   .form td input { width:9em; padding:6px; }
   .form td input.par { width:4em; text-align:center; }
+  .form label.chk { display:inline-block; margin:4px 20px 4px 0; font-weight:normal; }
+  .form label.chk input { width:20px; height:20px; vertical-align:middle; }
   @media print {
     nav, .toolbar, .hint, .noprint { display:none !important; }
     body { font-size:11pt; background:#fff; }
@@ -107,10 +109,20 @@
       <button class="btn" id="add-course">+ 코스 추가</button>
       <button class="btn danger" id="del-course">− 마지막 코스 빼기</button>
     </div>
-    <label for="s-split">개인전 순위</label>
-    <select id="s-split" data-s="indivSplit"><option value="gender">남녀 따로</option><option value="all">남녀 통합</option></select>
-    <label for="s-award">부문별 시상</label>
-    <select id="s-award" data-s="awardN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지
+    <label>경기 종류</label>
+    <label class="chk"><input type="checkbox" data-s="indiv"> 개인전</label>
+    <label class="chk"><input type="checkbox" data-s="team"> 단체전</label>
+    <div data-show="indiv">
+      <label for="s-split">개인전 순위</label>
+      <select id="s-split" data-s="indivSplit"><option value="gender">남녀 따로</option><option value="all">남녀 통합</option></select>
+      <label for="s-award">개인전 시상</label>
+      <select id="s-award" data-s="awardN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지
+    </div>
+    <div data-show="team">
+      <label for="s-tsplit">단체전 방식</label>
+      <select id="s-tsplit" data-s="teamSplit"><option value="gender">남녀 따로</option><option value="mixed">혼성(복식)</option></select>
+      <p class="hint">입력표 '팀' 칸에 같은 팀 이름을 적은 선수끼리 한 팀입니다. 코스마다 팀원 중 가장 적은 타수가 팀 점수입니다.</p>
+    </div>
     <label>새 대회 시작</label>
     <p class="hint">지난 대회 선수가 남아 있으면 아래 버튼으로 지우고 시작하세요. 대회 설정은 남습니다.</p>
     <button class="btn danger" id="reset">선수와 점수 모두 지우기</button>
@@ -124,9 +136,10 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const MAX_COURSES = 26; // 기본 코스 이름을 A~Z 로 붙이므로
 const courseName = i => `${String.fromCharCode(65 + i)}코스`;
-const blankPlayer = (n = state.settings.courses.length) => ({ name: '', gender: '', club: '', group: '', scores: Array(n).fill(null) });
+const blankPlayer = (n = state.settings.courses.length) => ({ name: '', gender: '', club: '', group: '', event: '개인', team: '', scores: Array(n).fill(null) });
 const defaults = () => ({
-  settings: { title: '제1회 OO 파크골프 대회', date: '', place: '', courses: ['A코스', 'B코스', 'C코스', 'D코스'], pars: [33, 33, 33, 33], awardN: 3, indivSplit: 'gender' },
+  settings: { title: '제1회 OO 파크골프 대회', date: '', place: '', courses: ['A코스', 'B코스', 'C코스', 'D코스'], pars: [33, 33, 33, 33], awardN: 3, indivSplit: 'gender',
+    indiv: true, team: false, teamSplit: 'gender' },
   players: Array.from({ length: 20 }, () => blankPlayer(4)),
 });
 
@@ -145,10 +158,13 @@ function normalize(d) {
       pars: idx.map(i => num((s.pars || [])[i]) ?? 33),
       awardN: Math.min(5, Math.max(1, parseInt(s.awardN, 10) || 3)),
       indivSplit: s.indivSplit === 'all' ? 'all' : 'gender',
+      indiv: s.indiv !== false || s.team !== true, team: s.team === true,
+      teamSplit: s.teamSplit === 'mixed' ? 'mixed' : 'gender',
     },
     players: d.players.map(p => ({
       name: str(p && p.name), gender: ['남', '여'].includes(p && p.gender) ? p.gender : '',
       club: str(p && p.club), group: str(p && p.group),
+      event: (p && p.event) === '단체' ? '단체' : '개인', team: str(p && p.team),
       scores: idx.map(i => num(((p && p.scores) || [])[i])),
     })),
   };
@@ -174,14 +190,22 @@ try { localStorage.setItem(KEY + '-test', '1'); localStorage.removeItem(KEY + '-
 const parSum = () => state.settings.pars.reduce((a, b) => a + b, 0);
 const diff = t => { const d = t - parSum(); return d > 0 ? '+' + d : String(d); };
 
+// 개인전·단체전을 함께 할 때만 선수마다 종목을 고른다
+function eventOf(p) {
+  const s = state.settings;
+  return s.indiv && s.team ? p.event : s.team ? '단체' : '개인';
+}
+const indivPlayers = () => state.players.filter(p => eventOf(p) === '개인');
+
 function status(p) {
   const filled = p.scores.filter(s => s !== null);
   if (!p.name.trim() && filled.length === 0) return '';
   if (filled.some(s => !isScore(s))) return '점수확인';
   if (!p.name.trim()) return '이름없음';
+  if (eventOf(p) === '단체') return p.team.trim() ? '단체' : '팀없음'; // 팀원은 코스 빈칸 허용
   return isComplete(p) ? '완료' : '입력중';
 }
-const STATUS_TEXT = { 점수확인: '점수 확인', 이름없음: '이름 없음', 입력중: '입력중', 완료: '완료', '': '' };
+const STATUS_TEXT = { 점수확인: '점수 확인', 이름없음: '이름 없음', 팀없음: '팀 이름 없음', 단체: '단체', 입력중: '입력중', 완료: '완료', '': '' };
 
 function renderHeader() {
   const s = state.settings;
@@ -192,20 +216,22 @@ function renderHeader() {
 
 // ---------- 성적 입력 ----------
 function renderEntry() {
-  const c = state.settings.courses;
-  const opt = (p, g) => `<option${p.gender === g ? ' selected' : ''}>${g}</option>`;
+  const s = state.settings, c = s.courses, both = s.indiv && s.team;
+  const opt = (v, x) => `<option${v === x ? ' selected' : ''}>${x}</option>`;
   const rows = state.players.map((p, i) => `<tr data-i="${i}">
     <td class="calc">${i + 1}</td>
     <td><input class="name" data-f="name" value="${esc(p.name)}" aria-label="${i + 1}번 이름"></td>
-    <td><select data-f="gender" aria-label="${i + 1}번 성별"><option value=""></option>${opt(p, '남')}${opt(p, '여')}</select></td>
+    <td><select data-f="gender" aria-label="${i + 1}번 성별"><option value=""></option>${opt(p.gender, '남')}${opt(p.gender, '여')}</select></td>
     <td><input class="club" data-f="club" value="${esc(p.club)}" aria-label="${i + 1}번 소속"></td>
     <td><input class="grp" data-f="group" value="${esc(p.group)}" aria-label="${i + 1}번 조"></td>
+    ${both ? `<td><select data-f="event" aria-label="${i + 1}번 종목">${opt(p.event, '개인')}${opt(p.event, '단체')}</select></td>` : ''}
+    ${s.team ? `<td><input class="club" data-f="team" value="${esc(p.team)}" aria-label="${i + 1}번 팀"></td>` : ''}
     ${p.scores.map((s, k) => `<td><input class="sc" data-f="s${k}" inputmode="numeric" value="${s ?? ''}" aria-label="${i + 1}번 ${esc(c[k])}"></td>`).join('')}
     <td class="calc total"></td><td class="calc st"></td>
     <td><button class="del" title="이 줄 지우기" aria-label="${i + 1}번 줄 지우기">✕</button></td>
   </tr>`).join('');
   $('entry').innerHTML = `<thead><tr><th>번호</th><th>이름</th><th>성별</th><th>소속</th><th>조</th>
-    ${c.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>상태</th><th></th></tr></thead><tbody>${rows}</tbody>`;
+    ${both ? '<th>종목</th>' : ''}${s.team ? '<th>팀</th>' : ''}${c.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>상태</th><th></th></tr></thead><tbody>${rows}</tbody>`;
   state.players.forEach((_, i) => updateRow(i));
 }
 
@@ -263,8 +289,8 @@ function rankRow(p, rank, cols) {
 }
 
 function renderRank() {
-  const s = state.settings, ranked = rankPlayers(state.players), byGender = s.indivSplit === 'gender';
-  const named = state.players.filter(p => p.name.trim());
+  const s = state.settings, ranked = rankPlayers(indivPlayers()), byGender = s.indivSplit === 'gender';
+  const named = indivPlayers().filter(p => p.name.trim());
   const waiting = named.filter(p => !isComplete(p)).length;
   $('stats').innerHTML = `<span>참가 ${named.length}명</span><span>순위 확정 ${ranked.length}명</span>`
     + (waiting ? `<span class="st-입력중">입력중 ${waiting}명</span>` : '');
@@ -280,7 +306,7 @@ function renderRank() {
 
 // ---------- 시상자 ----------
 function renderAward() {
-  const n = state.settings.awardN, a = awards(rankPlayers(state.players), n, state.settings.indivSplit === 'gender');
+  const n = state.settings.awardN, a = awards(rankPlayers(indivPlayers()), n, state.settings.indivSplit === 'gender');
   $('award-list').innerHTML = `<p class="hint">부문별 ${n}등까지 표시합니다. 공동 순위면 모두 표시합니다.</p>`
     + Object.entries(a).map(([label, list]) => {
       const key = label === '통합' ? 'rank' : 'divRank';
@@ -295,7 +321,9 @@ function renderAward() {
 // ---------- 대회 설정 ----------
 function renderSetting() {
   const s = state.settings;
-  ['title', 'date', 'place', 'awardN', 'indivSplit'].forEach(k => { document.querySelector(`[data-s="${k}"]`).value = s[k]; });
+  ['title', 'date', 'place', 'awardN', 'indivSplit', 'teamSplit'].forEach(k => { document.querySelector(`[data-s="${k}"]`).value = s[k]; });
+  ['indiv', 'team'].forEach(k => { document.querySelector(`[data-s="${k}"]`).checked = s[k]; });
+  document.querySelectorAll('[data-show]').forEach(el => { el.hidden = !s[el.dataset.show]; });
   $('course-table').innerHTML = '<tr><th>순서</th><th>코스 이름</th><th>기준타수</th></tr>'
     + s.courses.map((c, i) => `<tr><td>${i + 1}번째</td><td><input data-c="${i}" value="${esc(c)}"></td>
       <td><input class="par" data-p="${i}" inputmode="numeric" value="${s.pars[i]}"></td></tr>`).join('');
@@ -325,7 +353,11 @@ $('del-course').onclick = () => {
 
 $('setting').addEventListener('input', e => {
   const t = e.target, s = state.settings;
-  if (t.dataset.s) s[t.dataset.s] = t.dataset.s === 'awardN' ? +t.value : t.value;
+  if (t.type === 'checkbox') {
+    s[t.dataset.s] = t.checked;
+    if (!s.indiv && !s.team) s[t.dataset.s] = true; // 둘 중 하나는 켜져 있어야 함
+    renderSetting();
+  } else if (t.dataset.s) s[t.dataset.s] = t.dataset.s === 'awardN' ? +t.value : t.value;
   else if (t.dataset.c) s.courses[+t.dataset.c] = t.value;
   else if (t.dataset.p) {
     t.value = t.value.replace(/\D/g, '').slice(0, 2);
