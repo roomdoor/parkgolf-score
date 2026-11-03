@@ -34,9 +34,10 @@ function rankPlayers(players) {
 }
 
 // 시상자: 순위가 n 이하인 선수 전부 (공동 순위면 n명을 넘을 수 있음)
-function awards(ranked, n) {
+// byGender 면 남자부·여자부 따로, 아니면 통합 하나
+function awards(ranked, n, byGender = true) {
+  if (!byGender) return { 통합: ranked.filter(p => p.rank <= n) };
   return {
-    통합: ranked.filter(p => p.rank <= n),
     남자부: ranked.filter(p => p.gender === '남' && p.divRank <= n),
     여자부: ranked.filter(p => p.gender === '여' && p.divRank <= n),
   };

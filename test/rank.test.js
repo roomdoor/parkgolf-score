@@ -27,7 +27,8 @@ test('전체 순위: 합계 > D > C > B, 모두 같으면 공동', () => {
 
 test('부문 순위와 시상자 (공동 3위 포함)', () => {
   const a = awards(rankPlayers(DUMMY), 3);
-  assert.deepStrictEqual(a.통합.map(p => p.name), ['조성민', '윤서연', '홍길동']);
+  assert.deepStrictEqual(Object.keys(a), ['남자부', '여자부']);
+  assert.deepStrictEqual(awards(rankPlayers(DUMMY), 3, false).통합.map(p => p.name), ['조성민', '윤서연', '홍길동']);
   assert.deepStrictEqual(a.남자부.map(p => [p.divRank, p.name]), [[1, '조성민'], [2, '홍길동'], [3, '김철수'], [3, '최동현']]);
   assert.deepStrictEqual(a.여자부.map(p => [p.divRank, p.name]), [[1, '윤서연'], [2, '송지유'], [3, '한은지']]);
 });

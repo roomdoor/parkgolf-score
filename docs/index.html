@@ -107,6 +107,8 @@
       <button class="btn" id="add-course">+ 코스 추가</button>
       <button class="btn danger" id="del-course">− 마지막 코스 빼기</button>
     </div>
+    <label for="s-split">개인전 순위</label>
+    <select id="s-split" data-s="indivSplit"><option value="gender">남녀 따로</option><option value="all">남녀 통합</option></select>
     <label for="s-award">부문별 시상</label>
     <select id="s-award" data-s="awardN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지
     <label>새 대회 시작</label>
@@ -124,7 +126,7 @@ const MAX_COURSES = 26; // 기본 코스 이름을 A~Z 로 붙이므로
 const courseName = i => `${String.fromCharCode(65 + i)}코스`;
 const blankPlayer = (n = state.settings.courses.length) => ({ name: '', gender: '', club: '', group: '', scores: Array(n).fill(null) });
 const defaults = () => ({
-  settings: { title: '제1회 OO 파크골프 대회', date: '', place: '', courses: ['A코스', 'B코스', 'C코스', 'D코스'], pars: [33, 33, 33, 33], awardN: 3 },
+  settings: { title: '제1회 OO 파크골프 대회', date: '', place: '', courses: ['A코스', 'B코스', 'C코스', 'D코스'], pars: [33, 33, 33, 33], awardN: 3, indivSplit: 'gender' },
   players: Array.from({ length: 20 }, () => blankPlayer(4)),
 });
 
@@ -142,6 +144,7 @@ function normalize(d) {
       courses: idx.map(i => str((s.courses || [])[i]) || courseName(i)),
       pars: idx.map(i => num((s.pars || [])[i]) ?? 33),
       awardN: Math.min(5, Math.max(1, parseInt(s.awardN, 10) || 3)),
+      indivSplit: s.indivSplit === 'all' ? 'all' : 'gender',
     },
     players: d.players.map(p => ({
       name: str(p && p.name), gender: ['남', '여'].includes(p && p.gender) ? p.gender : '',
@@ -260,7 +263,7 @@ function rankRow(p, rank, cols) {
 }
 
 function renderRank() {
-  const s = state.settings, ranked = rankPlayers(state.players);
+  const s = state.settings, ranked = rankPlayers(state.players), byGender = s.indivSplit === 'gender';
   const named = state.players.filter(p => p.name.trim());
   const waiting = named.filter(p => !isComplete(p)).length;
   $('stats').innerHTML = `<span>참가 ${named.length}명</span><span>순위 확정 ${ranked.length}명</span>`
@@ -270,14 +273,14 @@ function renderRank() {
     + ' 공동 순위입니다.';
   if (!ranked.length) { $('rank-table').innerHTML = `<tr><td class="empty">아직 ${s.courses.length}개 코스를 모두 입력한 선수가 없습니다.</td></tr>`; return; }
   $('rank-table').innerHTML = `<thead><tr><th>순위</th><th>이름</th><th>성별</th><th>소속</th><th>조</th>
-    ${s.courses.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>기준타 대비</th><th>부문 순위</th></tr></thead><tbody>`
+    ${s.courses.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>기준타 대비</th>${byGender ? '<th>부문 순위</th>' : ''}</tr></thead><tbody>`
     + ranked.map(p => rankRow(p, p.rank, q => [q.name, q.gender, q.club, q.group, ...q.scores, q.total, diff(q.total),
-      q.divRank ? `${q.gender} ${q.divRank}위` : ''])).join('') + '</tbody>';
+      ...(byGender ? [q.divRank ? `${q.gender} ${q.divRank}위` : ''] : [])])).join('') + '</tbody>';
 }
 
 // ---------- 시상자 ----------
 function renderAward() {
-  const n = state.settings.awardN, a = awards(rankPlayers(state.players), n);
+  const n = state.settings.awardN, a = awards(rankPlayers(state.players), n, state.settings.indivSplit === 'gender');
   $('award-list').innerHTML = `<p class="hint">부문별 ${n}등까지 표시합니다. 공동 순위면 모두 표시합니다.</p>`
     + Object.entries(a).map(([label, list]) => {
       const key = label === '통합' ? 'rank' : 'divRank';
@@ -292,7 +295,7 @@ function renderAward() {
 // ---------- 대회 설정 ----------
 function renderSetting() {
   const s = state.settings;
-  ['title', 'date', 'place', 'awardN'].forEach(k => { document.querySelector(`[data-s="${k}"]`).value = s[k]; });
+  ['title', 'date', 'place', 'awardN', 'indivSplit'].forEach(k => { document.querySelector(`[data-s="${k}"]`).value = s[k]; });
   $('course-table').innerHTML = '<tr><th>순서</th><th>코스 이름</th><th>기준타수</th></tr>'
     + s.courses.map((c, i) => `<tr><td>${i + 1}번째</td><td><input data-c="${i}" value="${esc(c)}"></td>
       <td><input class="par" data-p="${i}" inputmode="numeric" value="${s.pars[i]}"></td></tr>`).join('');
