@@ -92,9 +92,11 @@ b.pick { background:var(--green-l); color:#fff; padding:0 5px; border-radius:4px
 .row { display:flex; gap:16px; flex-wrap:wrap; }
 .row > div { flex:1; min-width:12em; }
 .form .row input { width:100%; }
-.kinds { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap:0 28px; }
+/* 칸 수를 고정해서 경기를 꺼도 다른 칸이 자리를 옮기지 않게. 좁으면 한 줄에 하나 */
+.kinds { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px 28px; }
+@media (max-width:1000px) { .kinds { grid-template-columns:1fr; } }
 .kinds input[type=text] { width:100%; }
-.kinds h3 { margin:20px 0 8px; font-size:19px; color:var(--green); }
+.kinds .chk + div { margin-top:10px; }
 .inline { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 details.hint { margin-top:12px; }
 details.hint summary { cursor:pointer; color:var(--green-l); font-weight:600; }
