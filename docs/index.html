@@ -61,19 +61,29 @@
 
   <!-- 대회 설정: tab-setting.js -->
   <section id="setting" class="form">
+    <div class="cards">
+    <div class="card">
+    <h2>대회 정보</h2>
     <label for="s-title">대회명</label><input type="text" id="s-title" data-s="title">
-    <label for="s-date">날짜</label><input type="date" id="s-date" data-s="date">
-    <label for="s-place">장소</label><input type="text" id="s-place" data-s="place">
-    <label>코스 이름과 기준타수</label>
+    <div class="row">
+      <div><label for="s-date">날짜</label><input type="date" id="s-date" data-s="date"></div>
+      <div><label for="s-place">장소</label><input type="text" id="s-place" data-s="place"></div>
+    </div>
+    </div>
+    <div class="card">
+    <h2>코스 이름과 기준타수</h2>
     <table id="course-table"></table>
     <div class="toolbar">
       <button class="btn" id="add-course">+ 코스 추가</button>
       <button class="btn danger" id="del-course">− 마지막 코스 빼기</button>
     </div>
-    <label>경기 종류</label>
+    </div>
+    <div class="card wide">
+    <h2>경기 종류와 시상</h2>
     <label class="chk"><input type="checkbox" data-s="indiv"> 개인전</label>
     <label class="chk"><input type="checkbox" data-s="team"> 단체전</label>
     <label class="chk"><input type="checkbox" data-s="club"> 클럽 종합</label>
+    <div class="kinds">
     <div data-show="indiv">
       <label for="s-split">개인전 순위</label>
       <select id="s-split" data-s="indivSplit"><option value="gender">남녀 따로</option><option value="all">남녀 통합</option></select>
@@ -97,9 +107,15 @@
       <p class="hint">남녀 따로면 남자부·여자부 순위에 각각 점수를 줍니다. 공동 순위는 같은 점수입니다.
         총점이 같으면 단체전 타수 합이 적은 클럽, (단체전 남녀 따로일 때) 그다음 여자팀 타수 합이 적은 클럽이 앞섭니다.</p>
     </div>
-    <label>새 대회 시작</label>
+    </div>
+    </div>
+    <!-- 되돌릴 수 없는 버튼이라 다른 설정과 떼어 둔다 -->
+    <div class="card wide danger-zone">
+    <h2>새 대회 시작</h2>
     <p class="hint">지난 대회 선수가 남아 있으면 아래 버튼으로 지우고 시작하세요. 대회 설정은 남습니다.</p>
     <button class="btn danger" id="reset">선수와 점수 모두 지우기</button>
+    </div>
+    </div>
   </section>
 </main>
 </body>
