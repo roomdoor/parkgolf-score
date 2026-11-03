@@ -37,11 +37,12 @@ export function renderRank() {
   tvY = scrollY; // 다시 그려 높이가 줄어 스크롤이 밀린 건 손 스크롤이 아니다 (TV 자동 스크롤이 멈추지 않게)
 }
 
-// 둘째 칸을 첫 칸 바로 오른쪽에 붙이려고 첫 칸 너비를 적어 둔다 (style.css 의 --c1). 화면 폭·TV 글씨 크기가 바뀌면 다시 잰다
+// 둘째 칸을 첫 칸 바로 오른쪽에 붙이려고 첫 칸 너비를 적어 둔다 (style.css 의 --c1). 화면 폭·TV 글씨 크기·글꼴이 바뀌면 다시 잰다
 function stickCols() {
   for (const t of $('rank').querySelectorAll('table')) t.style.setProperty('--c1', (t.rows[0]?.cells[0].offsetWidth || 0) + 'px');
 }
 addEventListener('resize', stickCols);
+document.fonts?.addEventListener('loadingdone', stickCols);
 
 function renderClubRank() {
   const list = clubRanking();
