@@ -1,7 +1,7 @@
 // 실행: node --test test/
 const test = require('node:test');
 const assert = require('node:assert');
-const { rankPlayers, awards, makeTeams, rankTeams, clubStandings } = require('../docs/rank.js');
+const { rankPlayers, awards, makeTeams, rankTeams, clubStandings, isScore } = require('../docs/rank.js');
 
 const P = (name, gender, ...scores) => ({ name, gender, club: '', group: '', scores });
 const T = (team, club, name, gender, ...scores) => ({ name, gender, club, group: '', team, scores });
@@ -109,4 +109,47 @@ test('클럽 종합 동점: 순위에 든 팀이 적은 클럽이 타수 합으�
   assert.deepStrictEqual(r.map(c => [c.club, c.teamCount, c.teamStrokes]), [['부계', 2, 120], ['한티', 1, 58]]);
   const tie = clubStandings([], teams, { ...o, teamPts: [5] }); // 남 1위 한티 5, 여 1위 부계 5 → 동점
   assert.deepStrictEqual(tie.map(c => [c.rank, c.club]), [[1, '부계'], [2, '한티']]);
+});
+
+test('점수 범위: 9~99 정수만', () => {
+  assert.deepStrictEqual([8, 9, 99, 100, 30.5, null, '30'].map(isScore), [false, true, true, false, false, false, false]);
+});
+
+test('단체전: 팀 이름·선수 이름 없는 줄은 빼고, 팀 이름 앞뒤 공백은 같은 팀', () => {
+  const teams = makeTeams([
+    T(' A ', '부계', '갑', '남', 30), T('A', '부계', '을', '남', 29), T('', '부계', '병', '남', 20), T('A', '부계', '', '남', 20),
+  ], 1);
+  assert.deepStrictEqual(teams.map(t => [t.name, t.members.map(m => m.name), t.scores]), [['A', ['갑', '을'], [29]]]);
+});
+
+test('단체전 혼성 대회: 혼성팀도 통합 순위와 시상에 든다', () => {
+  const r = rankTeams([
+    T('X', '부계', '갑', '남', 30, 30), T('X', '부계', '을', '여', 29, 31), // 29 + 30 = 59
+    T('Y', '한티', '병', '남', 30, 30), T('Y', '한티', '정', '남', 31, 31), // 60
+  ], 2);
+  assert.deepStrictEqual(r.map(t => [t.rank, t.name, t.gender, t.total]), [[1, 'X', '혼성', 59], [2, 'Y', '남', 60]]);
+  assert.deepStrictEqual(awards(r, 3, false).통합.map(t => t.name), ['X', 'Y']);
+});
+
+test('클럽 종합 혼성 대회: 모든 팀 타수를 세고, 여자팀 비교 없이 같으면 공동', () => {
+  const teams = rankTeams([
+    T('X', '부계', 'a', '남', 30), T('X', '부계', 'b', '여', 31), // 혼성 30
+    T('Y', '한티', 'c', '남', 30), T('Y', '한티', 'd', '여', 30), // 혼성 30 (공동 1위)
+  ], 1);
+  const r = clubStandings([], teams, { indivByGender: true, teamByGender: false, indivPts: [], teamPts: [8, 6] });
+  assert.deepStrictEqual(r.map(c => [c.rank, c.club, c.points, c.teamCount, c.teamStrokes]), [[1, '부계', 8, 1, 30], [1, '한티', 8, 1, 30]]);
+});
+
+test('클럽 종합: 남녀 따로면 성별 없는 팀은 팀 수·타수에서 빠진다', () => {
+  const teams = rankTeams([T('A', '부계', 'a', '남', 30), T('B', '부계', 'b', '', 30)], 1);
+  const [row] = clubStandings([], teams, { indivByGender: true, teamByGender: true, indivPts: [], teamPts: [8] });
+  assert.deepStrictEqual([row.teamCount, row.teamStrokes], [1, 30]);
+});
+
+test('클럽 종합: 통합 순위 기준 점수, 점수표보다 낮은 순위는 0점, 소속 없는 선수는 빠짐, 내역 문구', () => {
+  const C = (club, name, gender, s) => ({ ...P(name, gender, s), club });
+  const indiv = rankPlayers([C('부계', '갑', '남', 30), C('한티', '을', '여', 31), C('', '병', '남', 32), C('부계', '정', '여', 33)]);
+  const r = clubStandings(indiv, [], { indivByGender: false, teamByGender: true, indivPts: [6, 4], teamPts: [] });
+  assert.deepStrictEqual(r.map(c => [c.rank, c.club, c.points, c.detail]),
+    [[1, '부계', 6, ['개인 1위 갑 6점']], [2, '한티', 4, ['개인 2위 을 4점']]]);
 });

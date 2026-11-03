@@ -46,12 +46,9 @@ function makeTeams(players, nCourses) {
     map.get(key).push(p);
   }
   return [...map].map(([name, members]) => {
-    const filled = k => members.map(m => m.scores[k]).filter(s => s !== null);
-    const badScore = Array.from({ length: nCourses }, (_, k) => filled(k)).some(v => !v.every(isScore));
-    const scores = Array.from({ length: nCourses }, (_, k) => {
-      const v = filled(k);
-      return v.length && v.every(isScore) ? Math.min(...v) : null;
-    });
+    const filled = Array.from({ length: nCourses }, (_, k) => members.map(m => m.scores[k]).filter(s => s !== null));
+    const badScore = filled.some(v => !v.every(isScore));
+    const scores = filled.map(v => (v.length && v.every(isScore) ? Math.min(...v) : null));
     const genders = new Set(members.map(m => m.gender));
     const clubs = new Set(members.map(m => m.club.trim()));
     return {
