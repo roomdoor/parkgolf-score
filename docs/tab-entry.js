@@ -100,7 +100,7 @@ onBoth($('entry'), e => {
   const digits = e.target.value.replace(/\D/g, '');
   if (f.startsWith('s')) {
     e.target.value = digits.slice(0, 2);
-    p.scores[+f[1]] = e.target.value === '' ? null : parseInt(e.target.value, 10);
+    p.scores[+f.slice(1)] = e.target.value === '' ? null : parseInt(e.target.value, 10);
   } else {
     p[f] = e.target.value;
   }
@@ -117,11 +117,19 @@ onBoth($('entry'), e => {
 });
 
 // 이름 찾기: 적는 동안 처음 맞는 줄로 화면을 옮기고, Enter 면 그 선수의 첫 빈 점수 칸(없으면 첫 점수 칸)으로
+// 조별 보기 중 고른 조에 없으면 찾은 선수의 조로 바꿔서 보여 준다
 function findRow() {
   const q = $('find').value.trim();
   $('entry').querySelectorAll('tr.found').forEach(tr => tr.classList.remove('found'));
   if (!q) return null;
-  const tr = [...$('entry').tBodies[0].rows].find(tr => state.players[+tr.dataset.i].name.includes(q));
+  const match = () => [...$('entry').tBodies[0].rows].find(tr => state.players[+tr.dataset.i].name.includes(q));
+  let tr = match();
+  const other = !tr && $('group-filter').value && state.players.find(p => p.name.includes(q));
+  if (other) {
+    $('group-filter').value = other.group.trim();
+    renderEntry();
+    tr = match();
+  }
   tr?.classList.add('found');
   tr?.scrollIntoView({ block: 'center' });
   return tr;
