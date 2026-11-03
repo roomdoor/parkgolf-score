@@ -79,6 +79,7 @@
   <section id="input">
     <p class="hint">노란 칸에 적으세요. 적는 즉시 저장됩니다. 코스 점수는 그 코스 9홀 합계입니다. 코스 수는 '대회 설정'에서 바꿉니다. Enter를 누르면 아래 칸으로 갑니다.</p>
     <div class="scroll"><table id="entry"></table></div>
+    <datalist id="team-names"></datalist>
     <div class="toolbar">
       <button class="btn" id="add-rows">+ 선수 칸 10개 더 만들기</button>
       <span class="saved" id="saved"></span>
@@ -248,7 +249,7 @@ function renderEntry() {
     <td><input class="club" data-f="club" value="${esc(p.club)}" aria-label="${i + 1}번 소속"></td>
     <td><input class="grp" data-f="group" value="${esc(p.group)}" aria-label="${i + 1}번 조"></td>
     ${both ? `<td><select data-f="event" aria-label="${i + 1}번 종목">${opt(p.event, '개인')}${opt(p.event, '단체')}</select></td>` : ''}
-    ${s.team ? `<td><input class="club" data-f="team" value="${esc(p.team)}" aria-label="${i + 1}번 팀"></td>` : ''}
+    ${s.team ? `<td><input class="club" data-f="team" list="team-names" value="${esc(p.team)}" aria-label="${i + 1}번 팀"></td>` : ''}
     ${p.scores.map((s, k) => `<td><input class="sc" data-f="s${k}" inputmode="numeric" value="${s ?? ''}" aria-label="${i + 1}번 ${esc(c[k])}"></td>`).join('')}
     <td class="calc total"></td><td class="calc st"></td>
     <td><button class="del" title="이 줄 지우기" aria-label="${i + 1}번 줄 지우기">✕</button></td>
@@ -256,6 +257,13 @@ function renderEntry() {
   $('entry').innerHTML = `<thead><tr><th>번호</th><th>이름</th><th>성별</th><th>소속</th><th>조</th>
     ${both ? '<th>종목</th>' : ''}${s.team ? '<th>팀</th>' : ''}${c.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>상태</th><th></th></tr></thead><tbody>${rows}</tbody>`;
   state.players.forEach((_, i) => updateRow(i));
+  fillTeamNames();
+}
+
+// 팀 칸에서 이미 적은 팀 이름을 골라 쓸 수 있게 (새 이름은 그냥 적으면 됨)
+function fillTeamNames() {
+  const names = [...new Set(state.players.map(p => p.team.trim()).filter(Boolean))].sort();
+  $('team-names').innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
 }
 
 function updateRow(i) {
@@ -279,6 +287,7 @@ onBoth($('entry'), e => {
   } else {
     p[f] = e.target.value;
   }
+  if (f === 'team' && e.type === 'change') fillTeamNames(); // 다 적고 칸을 벗어날 때만 목록 갱신 (적는 중간 글자는 안 넣음)
   updateRow(i);
   save();
 });
