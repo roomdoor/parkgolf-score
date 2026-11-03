@@ -148,6 +148,8 @@
 <script>
 const KEY = 'parkgolf-v1';
 const $ = id => document.getElementById(id);
+// 예전 사파리는 체크박스·선택칸에서 input 대신 change 만 보내므로 둘 다 받는다 (두 번 처리돼도 결과 같음)
+const onBoth = (el, fn) => ['input', 'change'].forEach(ev => el.addEventListener(ev, fn));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const MAX_COURSES = 26; // 기본 코스 이름을 A~Z 로 붙이므로
 const courseName = i => `${String.fromCharCode(65 + i)}코스`;
@@ -267,7 +269,7 @@ function updateRow(i) {
   tr.querySelectorAll('.sc').forEach((inp, k) => inp.classList.toggle('bad', p.scores[k] !== null && !isScore(p.scores[k])));
 }
 
-$('entry').addEventListener('input', e => {
+onBoth($('entry'), e => {
   const tr = e.target.closest('tr[data-i]');
   if (!tr) return;
   const i = +tr.dataset.i, f = e.target.dataset.f, p = state.players[i];
@@ -344,7 +346,7 @@ function renderClubRank() {
   const list = clubRanking();
   if (!list.length) { $('club-table').innerHTML = '<tr><td class="empty">아직 순위가 나온 클럽이 없습니다.</td></tr>'; return; }
   $('club-table').innerHTML = '<thead><tr><th>순위</th><th>클럽</th><th>총점</th><th>단체전 타수 합</th><th>점수 내역</th></tr></thead><tbody>'
-    + list.map(c => rankRow(c, c.rank, q => [q.club, q.points, q.hasTeam ? q.teamStrokes : '', q.detail.join(' / ')])).join('') + '</tbody>';
+    + list.map(c => rankRow(c, c.rank, q => [q.club, q.points, q.teamCount ? q.teamStrokes : '', q.detail.join(' / ')])).join('') + '</tbody>';
 }
 
 const teamPlayers = () => state.players.filter(p => eventOf(p) === '단체');
@@ -352,7 +354,8 @@ const teamRanking = () => rankTeams(teamPlayers(), state.settings.courses.length
 const memberText = t => t.members.map(m => `${m.name}(${m.scores.map(x => x ?? '-').join('·')})`).join(', ');
 
 function teamWarn(t) {
-  return [state.settings.teamSplit === 'gender' && t.gender === '혼성' ? '남녀 섞임' : '', t.mixedClub ? '소속 다름' : '']
+  const byGender = state.settings.teamSplit === 'gender';
+  return [byGender && t.gender === '' ? '성별 없음' : '', byGender && t.gender === '혼성' ? '남녀 섞임' : '', t.mixedClub ? '소속 다름' : '']
     .filter(Boolean).join(', ');
 }
 
@@ -360,7 +363,7 @@ function renderTeamRank() {
   const s = state.settings, byGender = s.teamSplit === 'gender', ranked = teamRanking(), po = playoff(ranked, byGender);
   const waiting = makeTeams(teamPlayers(), s.courses.length).filter(t => !isComplete(t));
   $('team-wait').textContent = waiting.length
-    ? `입력중인 팀 (모든 코스에 팀원 점수가 하나 이상 있어야 순위에 듭니다): ${waiting.map(t => t.name).join(', ')}` : '';
+    ? `입력중인 팀 (모든 코스에 팀원 점수가 하나 이상 있어야 순위에 듭니다): ${waiting.map(t => t.name + (t.badScore ? '(점수 확인)' : '')).join(', ')}` : '';
   if (!ranked.length) { $('team-table').innerHTML = '<tr><td class="empty">아직 순위가 나온 팀이 없습니다.</td></tr>'; return; }
   $('team-table').innerHTML = `<thead><tr><th>순위</th><th>팀</th><th>소속</th><th>구분</th><th>팀원 (코스별 점수)</th>
     ${s.courses.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>기준타 대비</th>${byGender ? '<th>부문 순위</th>' : ''}<th>확인</th></tr></thead><tbody>`
@@ -382,9 +385,9 @@ function renderIndivRank() {
 }
 
 // ---------- 시상자 ----------
-function awardBlocks(prefix, a, heads, cols, sudden = true) {
+// key: 남녀 따로면 'divRank', 아니면 'rank'
+function awardBlocks(prefix, a, key, heads, cols, sudden = true) {
   return Object.entries(a).map(([label, list]) => {
-    const key = label === '남자부' || label === '여자부' ? 'divRank' : 'rank';
     const tie1 = sudden && list.filter(p => p[key] === 1).length > 1;
     const body = list.length
       ? `<table><thead><tr><th>순위</th>${heads.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`
@@ -397,11 +400,12 @@ function awardBlocks(prefix, a, heads, cols, sudden = true) {
 function renderAward() {
   const s = state.settings;
   let html = '<p class="hint">공동 순위면 모두 표시합니다. 개인전·단체전 공동 1위는 연장전(서든데스)으로 가립니다.</p>';
-  if (s.indiv) html += awardBlocks(`개인전 (${s.awardN}등까지)`, awards(rankPlayers(indivPlayers()), s.awardN, s.indivSplit === 'gender'),
+  const ig = s.indivSplit === 'gender', tg = s.teamSplit === 'gender';
+  if (s.indiv) html += awardBlocks(`개인전 (${s.awardN}등까지)`, awards(rankPlayers(indivPlayers()), s.awardN, ig), ig ? 'divRank' : 'rank',
     ['이름', '성별', '소속', '조', '합계', '기준타 대비'], q => [q.name, q.gender, q.club, q.group, q.total, diff(q.total)]);
-  if (s.team) html += awardBlocks(`단체전 (${s.teamAwardN}등까지)`, awards(teamRanking(), s.teamAwardN, s.teamSplit === 'gender'),
+  if (s.team) html += awardBlocks(`단체전 (${s.teamAwardN}등까지)`, awards(teamRanking(), s.teamAwardN, tg), tg ? 'divRank' : 'rank',
     ['팀', '소속', '팀원', '합계', '기준타 대비'], q => [q.name, q.club, q.members.map(m => m.name).join(', '), q.total, diff(q.total)]);
-  if (s.club) html += awardBlocks(`클럽 종합 (${s.clubAwardN}등까지)`, { '': clubRanking().filter(c => c.rank <= s.clubAwardN && c.points > 0) },
+  if (s.club) html += awardBlocks(`클럽 종합 (${s.clubAwardN}등까지)`, { '': clubRanking().filter(c => c.rank <= s.clubAwardN && c.points > 0) }, 'rank',
     ['클럽', '총점'], q => [q.club, q.points], false);
   $('award-list').innerHTML = html;
 }
@@ -440,7 +444,7 @@ $('del-course').onclick = () => {
   renderSetting();
 };
 
-$('setting').addEventListener('input', e => {
+onBoth($('setting'), e => {
   const t = e.target, s = state.settings;
   if (t.type === 'checkbox') {
     s[t.dataset.s] = t.checked;

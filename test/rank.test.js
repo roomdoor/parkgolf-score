@@ -90,3 +90,23 @@ test('단체전: 섞인 팀은 혼성, 소속이 다르면 표시', () => {
   const [t] = makeTeams([T('A', '부계', '갑', '남', 30), T('A', '한티', '을', '여', 31)], 1);
   assert.deepStrictEqual([t.gender, t.club, t.mixedClub, t.scores], ['혼성', '', true, [30]]);
 });
+
+test('단체전: 팀원 점수 오타가 있으면 그 코스는 비워 순위에서 빠지고, 성별 빈 팀원이 있으면 성별 없음', () => {
+  const [t] = makeTeams([T('A', '부계', '갑', '남', 311, 30), T('A', '부계', '을', '', 35, 31)], 2);
+  assert.deepStrictEqual([t.scores, t.badScore, t.gender], [[null, 30], true, '']);
+  assert.deepStrictEqual(rankTeams([T('A', '부계', '갑', '남', 311, 30), T('A', '부계', '을', '남', 35, 31)], 2), []);
+});
+
+test('클럽 종합 동점: 순위에 든 팀이 적은 클럽이 타수 합으로 이득 보지 않는다, 남녀 따로면 혼성팀 타수는 안 셈', () => {
+  const o = { indivByGender: true, teamByGender: true, indivPts: [], teamPts: [5, 5] };
+  const teams = rankTeams([
+    T('부계남', '부계', 'a', '남', 30, 30), T('부계여', '부계', 'b', '여', 30, 30), // 부계: 2팀 120타
+    T('한티남', '한티', 'c', '남', 29, 29), // 한티: 1팀 58타 (여자팀 미입력)
+    T('한티섞', '한티', 'd', '남', 20, 20), T('한티섞', '한티', 'e', '여', 20, 20), // 혼성: 남녀 따로라 무시
+    T('한티여', '한티', 'f', '여', 30, null),
+  ], 2);
+  const r = clubStandings([], teams, o);
+  assert.deepStrictEqual(r.map(c => [c.club, c.teamCount, c.teamStrokes]), [['부계', 2, 120], ['한티', 1, 58]]);
+  const tie = clubStandings([], teams, { ...o, teamPts: [5] }); // 남 1위 한티 5, 여 1위 부계 5 → 동점
+  assert.deepStrictEqual(tie.map(c => [c.rank, c.club]), [[1, '부계'], [2, '한티']]);
+});

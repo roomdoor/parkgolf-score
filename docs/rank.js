@@ -16,9 +16,9 @@ function compare(a, b) {
   return 0;
 }
 
-function assignRanks(list, field) {
+function assignRanks(list, field, cmp = compare) {
   list.forEach((p, i) => {
-    p[field] = i > 0 && compare(p, list[i - 1]) === 0 ? list[i - 1][field] : i + 1;
+    p[field] = i > 0 && cmp(p, list[i - 1]) === 0 ? list[i - 1][field] : i + 1;
   });
 }
 
@@ -35,6 +35,8 @@ function rankPlayers(players) {
 
 // 단체전: 팀 이름이 같은 선수끼리 한 팀. 코스마다 팀원 중 가장 적은 타수가 팀 점수.
 // 카드에 팀 점수 하나만 적히는 대회는 한 사람 줄에만 적으면 그대로 팀 점수가 된다.
+// 팀원 중 누구라도 범위 밖 점수(오타)를 적은 코스는 비워 둬서 팀이 순위에 들지 않게 한다.
+// 성별이 빈 팀원이 있으면 gender 는 '', 남녀가 섞이면 '혼성'.
 function makeTeams(players, nCourses) {
   const map = new Map();
   for (const p of players) {
@@ -44,15 +46,17 @@ function makeTeams(players, nCourses) {
     map.get(key).push(p);
   }
   return [...map].map(([name, members]) => {
+    const filled = k => members.map(m => m.scores[k]).filter(s => s !== null);
+    const badScore = Array.from({ length: nCourses }, (_, k) => filled(k)).some(v => !v.every(isScore));
     const scores = Array.from({ length: nCourses }, (_, k) => {
-      const v = members.map(m => m.scores[k]).filter(isScore);
-      return v.length ? Math.min(...v) : null;
+      const v = filled(k);
+      return v.length && v.every(isScore) ? Math.min(...v) : null;
     });
     const genders = new Set(members.map(m => m.gender));
     const clubs = new Set(members.map(m => m.club.trim()));
     return {
-      name, members, scores,
-      gender: genders.size === 1 ? members[0].gender : '혼성',
+      name, members, scores, badScore,
+      gender: genders.has('') ? '' : genders.size === 1 ? members[0].gender : '혼성',
       club: clubs.size === 1 ? members[0].club.trim() : '',
       mixedClub: clubs.size > 1,
     };
@@ -63,11 +67,13 @@ function makeTeams(players, nCourses) {
 const rankTeams = (players, nCourses) => rankPlayers(makeTeams(players, nCourses));
 
 // 클럽 종합: 개인·단체 순위를 점수(pts[순위-1])로 바꿔 소속별 합산. 공동 순위는 같은 점수.
-// 동점이면 단체전 타수 합이 적은 클럽, 남녀 따로면 그다음 여자팀 타수 합이 적은 클럽. 그래도 같으면 공동.
+// 동점이면 순위에 든 팀이 많은 클럽(덜 입력된 팀이 타수 합에서 이득 보지 않게), 그다음 단체전 타수 합이 적은 클럽,
+// 남녀 따로면 그다음 여자팀 타수 합이 적은 클럽. 그래도 같으면 공동.
+// teams 는 순위가 나온 팀만. 남녀 따로면 남자팀·여자팀만 센다.
 function clubStandings(indiv, teams, o) {
   const clubs = new Map();
   const get = c => {
-    if (!clubs.has(c)) clubs.set(c, { club: c, points: 0, detail: [], teamStrokes: 0, womenStrokes: 0, hasTeam: false });
+    if (!clubs.has(c)) clubs.set(c, { club: c, points: 0, detail: [], teamCount: 0, teamStrokes: 0, womenStrokes: 0 });
     return clubs.get(c);
   };
   const add = (list, byGender, pts, label) => {
@@ -81,16 +87,16 @@ function clubStandings(indiv, teams, o) {
   add(indiv, o.indivByGender, o.indivPts, '개인');
   add(teams, o.teamByGender, o.teamPts, '단체');
   for (const t of teams) {
-    if (!t.club) continue;
+    if (!t.club || (o.teamByGender && !t.divRank)) continue;
     const row = get(t.club);
-    row.hasTeam = true;
+    row.teamCount++;
     row.teamStrokes += t.total;
     if (t.gender === '여') row.womenStrokes += t.total;
   }
-  const key = r => [-r.points, r.hasTeam ? r.teamStrokes : Infinity, o.teamByGender && r.womenStrokes ? r.womenStrokes : Infinity];
-  const cmp = (a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < 3; i++) if (ka[i] !== kb[i]) return ka[i] - kb[i]; return 0; };
+  const key = r => [-r.points, -r.teamCount, r.teamStrokes, o.teamByGender && r.womenStrokes ? r.womenStrokes : Infinity];
+  const cmp = (a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return ka[i] - kb[i]; return 0; };
   const list = [...clubs.values()].sort(cmp);
-  list.forEach((r, i) => { r.rank = i > 0 && cmp(r, list[i - 1]) === 0 ? list[i - 1].rank : i + 1; });
+  assignRanks(list, 'rank', cmp);
   return list;
 }
 
