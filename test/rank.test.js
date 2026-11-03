@@ -1,7 +1,7 @@
 // 실행: node --test test/
-const test = require('node:test');
-const assert = require('node:assert');
-const { rankPlayers, awards, makeTeams, rankTeams, clubStandings, isScore, sortRows, moveCell, teamPicks } = require('../docs/rank.js');
+import test from 'node:test';
+import assert from 'node:assert';
+import { rankPlayers, awards, makeTeams, rankTeams, clubStandings, isScore, sortRows, moveCell, teamPicks } from '../docs/rank.js';
 
 const P = (name, gender, ...scores) => ({ name, gender, club: '', group: '', scores });
 const T = (team, club, name, gender, ...scores) => ({ name, gender, club, group: '', team, scores });

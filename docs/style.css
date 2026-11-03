@@ -1,0 +1,123 @@
+/* 골프장 리더보드 느낌: 진녹색 + 금색, 제목은 명조. 글꼴을 못 받아도(오프라인) 기본 글꼴로 동작 */
+:root { --green:#0f3b2a; --green-l:#1e6b45; --gold:#c9a24a; --cream:#f7f3ea; --paper:#fffdf7; --line:#e4dcc8; --zebra:#fbf8f1;
+  --yellow:#fff6d6; --red:#c0392b; --orange:#d35400; --serif:"Noto Serif KR",serif; }
+* { box-sizing:border-box; }
+[hidden] { display:none !important; }
+body { margin:0; font-family:Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif; font-size:19px; color:#1f2a22; background:var(--cream); }
+header { background:var(--green); color:#f3e9cf; padding:24px 28px 8px; }
+header h1 { margin:0; font-family:var(--serif); font-size:32px; letter-spacing:-.5px; }
+header p { margin:4px 0 0; color:#c9b98b; }
+nav { display:flex; gap:6px; flex-wrap:wrap; padding:0 22px; background:var(--green); position:sticky; top:0; z-index:5; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+nav button { font-size:20px; padding:16px 18px 13px; border:none; border-bottom:4px solid transparent; background:none; color:#cfd8cf; cursor:pointer; font-weight:bold; font-family:inherit; }
+nav button:hover { color:#fff; }
+nav button.on { color:#fff; border-color:var(--gold); }
+main { padding:20px 28px 60px; }
+section { display:none; }
+section.on { display:block; }
+.hint { color:#5d665f; margin:4px 0 14px; }
+ul.hint { padding-left:22px; line-height:1.6; }
+.warn { background:#fdecea; color:var(--red); padding:12px 16px; border-radius:8px; font-weight:bold; }
+.scroll { overflow-x:auto; border-radius:8px; box-shadow:0 1px 3px rgba(60,50,20,.08); width:fit-content; max-width:100%; }
+table { border-collapse:collapse; background:#fff; }
+th, td { border-bottom:1px solid var(--line); padding:9px 10px; text-align:center; }
+th { background:var(--green); color:#e9dcb5; font-weight:600; font-size:16px; letter-spacing:.3px; white-space:nowrap; }
+tbody tr:nth-child(even) td { background:var(--zebra); }
+td.calc { color:#5d665f; }
+td.total { font-weight:800; color:#1f2a22; font-size:21px; }
+input, select { font-size:19px; font-family:inherit; }
+.btn { font-size:19px; padding:11px 20px; border-radius:8px; border:1px solid #cbbf9f; background:#fff; color:#1f2a22; cursor:pointer; font-family:inherit; font-weight:600; }
+.btn:hover { background:#fbf6e8; }
+.btn.main { background:var(--green); color:#f3e9cf; border-color:var(--green); }
+.btn.main:hover { background:var(--green-l); }
+.btn.gold { background:var(--gold); color:#1f2a22; border-color:var(--gold); }
+.btn.danger { color:var(--red); border-color:#e3b3ad; }
+.btn:disabled { opacity:.4; cursor:default; }
+.toolbar { display:flex; gap:12px; align-items:center; margin:12px 0; flex-wrap:wrap; }
+.empty { color:#8a8f86; }
+
+/* ---------- 성적 입력 ---------- */
+#entry input, #entry select { font-size:22px; border:1px solid #d9cfb6; background:var(--yellow); padding:8px 6px; border-radius:6px; color:#1f2a22; }
+#entry input:focus, #entry select:focus { outline:3px solid var(--gold); outline-offset:1px; background:#fff; }
+#entry tbody tr:focus-within td { background:#f3ecd6; }
+#entry tbody tr.err td { background:#fdecea; }
+#entry th, #entry td.st { white-space:nowrap; }
+#entry th.sort { cursor:pointer; user-select:none; }
+#entry th.sort:hover { color:#fff; background:var(--green-l); }
+/* 아이콘 자리 너비를 고정해서 ⇅ ↔ ①▲ 로 바뀌어도 칸 너비가 그대로 */
+#entry th.sort i { display:inline-block; width:2em; margin-left:4px; text-align:left; font-style:normal; opacity:.7; }
+#entry th.sort.on { color:#fff; }
+#entry th.sort.on i { opacity:1; color:var(--gold); }
+#entry .name, #entry .club { width:6em; }
+#entry .grp { width:3.5em; }
+#entry .sc { width:3em; text-align:center; }
+#entry input.pick { background:var(--green-l); border-color:var(--green); color:#fff; font-weight:bold; }
+#entry input.bad { border:2px solid var(--red); background:#fdecea; color:var(--red); }
+.st-입력중 { color:var(--orange); font-weight:bold; }
+.st-이름없음, .st-점수확인, .st-팀없음 { color:var(--red); font-weight:bold; }
+.st-완료 { color:var(--green-l); font-weight:bold; }
+.del { border:none; background:none; color:#b3a98f; font-size:20px; cursor:pointer; }
+.del:hover { color:var(--red); }
+.saved { color:var(--green-l); font-weight:600; }
+
+/* ---------- 순위표·시상자 ---------- */
+/* 순위 1·2·3 위: 금·은·동 */
+tr.r1 td { background:#fdf3d7 !important; }
+tr.r1 td:first-child, tr.r2 td:first-child, tr.r3 td:first-child { font-family:var(--serif); font-weight:800; font-size:22px; }
+tr.r1 td:first-child { color:#a8791e; }
+tr.r2 td:first-child { color:#6f7782; }
+tr.r3 td:first-child { color:#9a5a32; }
+#rank td, .award td { padding:11px 16px; font-size:20px; }
+#rank-table td:nth-child(2), #team-table td:nth-child(2), .award td:nth-child(2) { font-weight:700; }
+#team-table th, #team-table td { white-space:nowrap; }
+#team-table td:nth-child(5) { text-align:left; line-height:1.7; }
+b.pick { background:var(--green-l); color:#fff; padding:0 5px; border-radius:4px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.stats span { margin-right:24px; }
+.award h3, #rank h3 { margin:26px 0 10px; font-family:var(--serif); font-size:24px; color:var(--green); }
+
+/* ---------- 대회 설정 ---------- */
+.form label { display:block; margin:18px 0 6px; font-weight:bold; color:var(--green); }
+.form input[type=text], .form input[type=date], .form select { width:22em; max-width:100%; padding:10px; border:1px solid #d9cfb6; border-radius:6px; background:var(--paper); }
+.form select { width:auto; }
+.form td input { width:9em; padding:8px; border:1px solid #d9cfb6; border-radius:6px; background:var(--paper); }
+.form td input.par { width:4em; text-align:center; }
+.form label.chk { display:inline-block; margin:4px 20px 4px 0; font-weight:normal; color:#1f2a22; }
+.form label.chk input { width:22px; height:22px; vertical-align:middle; accent-color:var(--green); }
+
+/* ---------- TV 모드: 본부석 TV·빔프로젝터용 전광판. 어두운 바탕에 큰 숫자 ---------- */
+#tv-off { display:none; }
+body.tv { background:#0d1512; color:#e8f0ec; font-size:26px; }
+body.tv nav, body.tv #rank .toolbar, body.tv #rank .hint { display:none; }
+body.tv header { background:none; padding:28px 40px 0; color:#fff; }
+body.tv header h1 { font-size:44px; }
+body.tv header p { color:#8aa197; }
+body.tv main { padding:10px 40px 40px; }
+body.tv #tv-off { display:block; position:fixed; top:20px; right:24px; z-index:9; background:#16211d; color:#8aa197; border-color:#2a3a33; }
+body.tv #rank h3 { color:#8aa197; font-family:inherit; font-size:24px; letter-spacing:2px; }
+body.tv .scroll { box-shadow:none; width:auto; }
+body.tv table { width:100%; background:none; border-collapse:separate; border-spacing:0 10px; }
+body.tv #rank th { background:none; color:#6b8278; font-size:18px; letter-spacing:1px; padding:0 14px; }
+body.tv #rank td { background:#131d19 !important; color:#e8f0ec; border:none; padding:18px 14px; font-size:30px; font-variant-numeric:tabular-nums; }
+body.tv #rank td:first-child { border-radius:12px 0 0 12px; font-size:34px; font-weight:900; color:#4ade80; font-family:inherit; }
+body.tv td:last-child { border-radius:0 12px 12px 0; }
+body.tv #rank tr.r1 td { background:#1d3a2a !important; }
+body.tv #rank tr.r1 td:first-child { color:#facc15; box-shadow:inset 6px 0 0 #facc15; }
+body.tv #rank tr.r2 td:first-child { color:#cbd5e1; }
+body.tv #rank tr.r3 td:first-child { color:#fb923c; }
+body.tv #rank #team-table td:nth-child(5) { font-size:22px; }
+body.tv b.pick { background:#4ade80; color:#0d1512; }
+body.tv .empty { color:#6b8278; }
+
+@media print {
+  nav, .toolbar, .hint, .noprint, #tv-off { display:none !important; }
+  .scroll { box-shadow:none; width:auto; }
+  tr.r1 td:first-child, tr.r2 td:first-child, tr.r3 td:first-child { font-size:inherit; }
+  body { font-size:11pt; background:#fff; }
+  header { background:none; color:#000; padding:0 0 8px; }
+  main { padding:0; }
+  table { width:100%; }
+  th, tr.r1 td, tr.r2 td, tr.r3 td { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  th { background:#ddd; color:#000; }
+  thead { display:table-header-group; }
+  tr { break-inside:avoid; }
+  @page { size:A4 landscape; margin:12mm; }
+}
