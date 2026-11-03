@@ -70,6 +70,9 @@ tr.r3 td:first-child { color:#9a5a32; }
 #rank-table td:nth-child(2), #team-table td:nth-child(2), .award td:nth-child(2) { font-weight:700; }
 #team-table th, #team-table td { white-space:nowrap; }
 #rank td:first-child, #rank-table td, #club-table td:nth-child(2) { white-space:nowrap; }
+/* 표마다 칸 수가 달라도 가로 폭을 화면 너비로 맞춘다 */
+#rank .scroll { width:auto; }
+#rank table { width:100%; }
 /* 클럽 점수 내역: 한 줄에 하나씩 */
 #rank #club-table td:last-child { text-align:left; font-size:17px; line-height:1.7; color:#3d4a41; }
 #team-table td:nth-child(5) { text-align:left; line-height:1.7; }
