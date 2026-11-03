@@ -80,31 +80,31 @@
     </div>
     <div class="card wide">
     <h2>경기 설정</h2>
-    <!-- 경기마다 한 칸: 버튼 아래에 그 경기 설정. 꺼도 칸 자리는 그대로 -->
+    <!-- 경기마다 한 칸: 버튼 아래에 그 경기 설정. 끄면 숨기지 않고 회색으로 잠가서 화면이 안 바뀜 -->
     <div class="kinds">
     <div>
     <label class="chk"><input type="checkbox" data-s="indiv"> 개인전</label>
-    <div data-show="indiv">
+    <fieldset data-show="indiv">
       <div class="inline">
         <select id="s-split" data-s="indivSplit" aria-label="개인전 순위 방식"><option value="gender">남녀 따로</option><option value="all">남녀 통합</option></select>
         <select id="s-award" data-s="awardN" aria-label="개인전 시상"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지 시상
       </div>
-    </div>
+    </fieldset>
     </div>
     <div>
     <label class="chk"><input type="checkbox" data-s="team"> 단체전</label>
-    <div data-show="team">
+    <fieldset data-show="team">
       <div class="inline">
         <select id="s-tsplit" data-s="teamSplit" aria-label="단체전 방식"><option value="gender">남녀 따로</option><option value="mixed">혼성(복식)</option></select>
         <select id="s-taward" data-s="teamAwardN" aria-label="단체전 시상"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지 시상
       </div>
       <details class="hint"><summary>팀은 어떻게 정해지나요?</summary>
         입력표 '팀' 칸에 같은 팀 이름을 적은 선수끼리 한 팀입니다. 코스마다 팀원 중 가장 적은 타수가 팀 점수입니다.</details>
-    </div>
+    </fieldset>
     </div>
     <div>
     <label class="chk"><input type="checkbox" data-s="club"> 클럽 종합</label>
-    <div data-show="club">
+    <fieldset data-show="club">
       <div class="inline">
         <select id="s-caward" data-s="clubAwardN" aria-label="클럽 종합 시상"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지 시상
       </div>
@@ -117,7 +117,7 @@
       <details class="hint"><summary>점수는 어떻게 매기나요?</summary>
         남녀 따로면 남자부·여자부 순위에 각각 점수를 줍니다. 공동 순위는 같은 점수입니다.
         총점이 같으면 단체전 타수 합이 적은 클럽, (단체전 남녀 따로일 때) 그다음 여자팀 타수 합이 적은 클럽이 앞섭니다.</details>
-    </div>
+    </fieldset>
     </div>
     </div>
     </div>

@@ -6,7 +6,7 @@ export function renderSetting() {
   ['title', 'date', 'place', 'awardN', 'indivSplit', 'teamSplit', 'teamAwardN', 'clubAwardN'].forEach(k => { document.querySelector(`[data-s="${k}"]`).value = s[k]; });
   ['indivPts', 'teamPts'].forEach(k => { document.querySelector(`[data-pts="${k}"]`).value = s[k].join(', '); });
   ['indiv', 'team', 'club'].forEach(k => { document.querySelector(`[data-s="${k}"]`).checked = s[k]; });
-  document.querySelectorAll('[data-show]').forEach(el => { el.hidden = !s[el.dataset.show]; });
+  document.querySelectorAll('[data-show]').forEach(el => { el.disabled = !s[el.dataset.show]; });
   $('course-table').innerHTML = '<tr><th>순서</th><th>코스 이름</th><th>기준타수</th></tr>'
     + s.courses.map((c, i) => `<tr><td>${i + 1}번째</td><td><input data-c="${i}" value="${esc(c)}"></td>
       <td><input class="par" data-p="${i}" inputmode="numeric" value="${s.pars[i]}"></td></tr>`).join('');

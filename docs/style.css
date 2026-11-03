@@ -96,7 +96,8 @@ b.pick { background:var(--green-l); color:#fff; padding:0 5px; border-radius:4px
 .kinds { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px 28px; }
 @media (max-width:1000px) { .kinds { grid-template-columns:1fr; } }
 .kinds input[type=text] { width:100%; }
-.kinds .chk + div { margin-top:10px; }
+.kinds fieldset { border:none; margin:10px 0 0; padding:0; min-width:0; }
+.kinds fieldset:disabled { opacity:.4; filter:grayscale(1); }
 .inline { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 details.hint { margin-top:12px; }
 details.hint summary { cursor:pointer; color:var(--green-l); font-weight:600; }
