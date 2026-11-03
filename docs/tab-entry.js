@@ -58,10 +58,10 @@ function fillNames(f) {
   $(f + '-names').innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
 }
 
-// 조 고르기 목록. 고른 조가 없어지면(조 이름을 다 바꾸면) 전체로 돌아간다
+// 조 고르기 목록. 고른 조는 선수가 없어져도 목록에 남겨서 화면과 어긋나지 않게
 function fillGroups() {
   const sel = $('group-filter'), cur = sel.value;
-  const groups = [...new Set(state.players.map(p => p.group.trim()).filter(Boolean))]
+  const groups = [...new Set([...state.players.map(p => p.group.trim()), cur].filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, 'ko', { numeric: true }));
   sel.innerHTML = '<option value="">전체</option>' + groups.map(x => `<option${x === cur ? ' selected' : ''}>${esc(x)}</option>`).join('');
 }
@@ -97,8 +97,9 @@ onBoth($('entry'), e => {
   const tr = e.target.closest('tr[data-i]');
   if (!tr) return;
   const i = +tr.dataset.i, f = e.target.dataset.f, p = state.players[i];
+  const digits = e.target.value.replace(/\D/g, '');
   if (f.startsWith('s')) {
-    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 2);
+    e.target.value = digits.slice(0, 2);
     p.scores[+f[1]] = e.target.value === '' ? null : parseInt(e.target.value, 10);
   } else {
     p[f] = e.target.value;
@@ -108,8 +109,8 @@ onBoth($('entry'), e => {
   updateRow(i);
   markPicks(); // 다른 팀원 칸 색도 바뀔 수 있어서 전체를 다시 칠함
   save();
-  // 점수 두 자리를 적으면 다음 코스 칸으로. 마지막 코스면 다음 줄 첫 코스로
-  if (f.startsWith('s') && e.type === 'input' && e.target.value.length === 2) {
+  // 점수 두 자리를 적으면 다음 코스 칸으로. 마지막 코스면 다음 줄 첫 코스로 (세 자리째가 잘린 거면 그대로)
+  if (f.startsWith('s') && e.type === 'input' && digits.length === 2) {
     const next = [...$('entry').querySelectorAll('.sc')];
     next[next.indexOf(e.target) + 1]?.focus();
   }
