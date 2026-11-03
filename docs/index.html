@@ -4,63 +4,109 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>파크골프 대회 성적표</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;800&display=swap">
 <style>
-  :root { --green:#2e7d32; --green-d:#1b5e20; --yellow:#fff8d6; --gray:#f2f2f2; --line:#c8c8c8; --red:#c62828; --orange:#e65100; }
+  /* 골프장 리더보드 느낌: 진녹색 + 금색, 제목은 명조. 글꼴을 못 받아도(오프라인) 기본 글꼴로 동작 */
+  :root { --green:#0f3b2a; --green-l:#1e6b45; --gold:#c9a24a; --cream:#f7f3ea; --paper:#fffdf7; --line:#e4dcc8; --zebra:#fbf8f1;
+    --yellow:#fff6d6; --red:#c0392b; --orange:#d35400; --serif:"Noto Serif KR",serif; }
   * { box-sizing:border-box; }
-  body { margin:0; font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif; font-size:18px; color:#222; background:#fafafa; }
-  header { background:var(--green); color:#fff; padding:16px 24px; }
-  header h1 { margin:0; font-size:28px; }
-  header p { margin:4px 0 0; opacity:.9; }
-  nav { display:flex; gap:8px; flex-wrap:wrap; padding:12px 24px; background:#e8f5e9; position:sticky; top:0; z-index:5; }
-  nav button { font-size:20px; padding:12px 22px; border:2px solid var(--green); background:#fff; color:var(--green-d); border-radius:10px; cursor:pointer; font-weight:bold; font-family:inherit; }
-  nav button.on { background:var(--green); color:#fff; }
-  main { padding:16px 24px 60px; }
+  body { margin:0; font-family:Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif; font-size:19px; color:#1f2a22; background:var(--cream); }
+  header { background:var(--green); color:#f3e9cf; padding:24px 28px 8px; }
+  header h1 { margin:0; font-family:var(--serif); font-size:32px; letter-spacing:-.5px; }
+  header p { margin:4px 0 0; color:#c9b98b; }
+  nav { display:flex; gap:6px; flex-wrap:wrap; padding:0 22px; background:var(--green); position:sticky; top:0; z-index:5; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+  nav button { font-size:20px; padding:16px 18px 13px; border:none; border-bottom:4px solid transparent; background:none; color:#cfd8cf; cursor:pointer; font-weight:bold; font-family:inherit; }
+  nav button:hover { color:#fff; }
+  nav button.on { color:#fff; border-color:var(--gold); }
+  main { padding:20px 28px 60px; }
   section { display:none; }
   section.on { display:block; }
-  .hint { color:#555; margin:4px 0 12px; }
-  .warn { background:#ffebee; color:var(--red); padding:12px 16px; border-radius:8px; font-weight:bold; }
-  .scroll { overflow-x:auto; }
+  .hint { color:#5d665f; margin:4px 0 14px; }
+  ul.hint { padding-left:22px; line-height:1.6; }
+  .warn { background:#fdecea; color:var(--red); padding:12px 16px; border-radius:8px; font-weight:bold; }
+  .scroll { overflow-x:auto; border-radius:8px; box-shadow:0 1px 3px rgba(60,50,20,.08); width:fit-content; max-width:100%; }
   table { border-collapse:collapse; background:#fff; }
-  th, td { border:1px solid var(--line); padding:6px 8px; text-align:center; }
-  th { background:var(--green); color:#fff; }
-  td.calc { background:var(--gray); }
-  input, select { font-size:18px; font-family:inherit; }
-  #entry input, #entry select { font-size:22px; border:1px solid #bbb; background:var(--yellow); padding:8px 6px; border-radius:4px; }
-  #entry input:focus, #entry select:focus { outline:3px solid var(--green); background:#fff; }
-  #entry tr:focus-within td { background:#e8f5e9; }
-  #entry tr.err td { background:#ffebee; }
+  th, td { border-bottom:1px solid var(--line); padding:9px 10px; text-align:center; }
+  th { background:var(--green); color:#e9dcb5; font-weight:600; font-size:16px; letter-spacing:.3px; white-space:nowrap; }
+  tbody tr:nth-child(even) td { background:var(--zebra); }
+  td.calc { color:#5d665f; }
+  td.total { font-weight:800; color:#1f2a22; font-size:21px; }
+  input, select { font-size:19px; font-family:inherit; }
+  #entry input, #entry select { font-size:22px; border:1px solid #d9cfb6; background:var(--yellow); padding:8px 6px; border-radius:6px; color:#1f2a22; }
+  #entry input:focus, #entry select:focus { outline:3px solid var(--gold); outline-offset:1px; background:#fff; }
+  #entry tbody tr:focus-within td { background:#f3ecd6; }
+  #entry tbody tr.err td { background:#fdecea; }
   #entry th, #entry td.st { white-space:nowrap; }
-  #entry .name, #entry .club { width:7em; }
+  #entry .name, #entry .club { width:6em; }
   #entry .grp { width:3.5em; }
   #entry .sc { width:3em; text-align:center; }
-  #entry input.pick { background:#a5d6a7; border:2px solid var(--green); font-weight:bold; }
-  #entry input.bad { border:2px solid var(--red); background:#ffebee; }
+  #entry input.pick { background:var(--green-l); border-color:var(--green); color:#fff; font-weight:bold; }
+  #entry input.bad { border:2px solid var(--red); background:#fdecea; color:var(--red); }
   .st-입력중 { color:var(--orange); font-weight:bold; }
   .st-이름없음, .st-점수확인, .st-팀없음 { color:var(--red); font-weight:bold; }
-  .st-완료 { color:var(--green); }
-  .btn { font-size:18px; padding:10px 18px; border-radius:8px; border:1px solid #999; background:#fff; cursor:pointer; font-family:inherit; }
-  .btn.main { background:var(--green); color:#fff; border-color:var(--green); font-weight:bold; }
-  .btn.danger { color:var(--red); border-color:var(--red); }
-  .del { border:none; background:none; color:#999; font-size:20px; cursor:pointer; }
-  tr.r1 td { background:#ffe082; }
-  tr.r2 td { background:#e0e0e0; }
-  tr.r3 td { background:#ffcc80; }
+  .st-완료 { color:var(--green-l); font-weight:bold; }
+  .btn { font-size:19px; padding:11px 20px; border-radius:8px; border:1px solid #cbbf9f; background:#fff; color:#1f2a22; cursor:pointer; font-family:inherit; font-weight:600; }
+  .btn:hover { background:#fbf6e8; }
+  .btn.main { background:var(--green); color:#f3e9cf; border-color:var(--green); }
+  .btn.main:hover { background:var(--green-l); }
+  .btn.gold { background:var(--gold); color:#1f2a22; border-color:var(--gold); }
+  .btn.danger { color:var(--red); border-color:#e3b3ad; }
+  .btn:disabled { opacity:.4; cursor:default; }
+  .del { border:none; background:none; color:#b3a98f; font-size:20px; cursor:pointer; }
+  .del:hover { color:var(--red); }
+  /* 순위 1·2·3 위: 금·은·동 */
+  tr.r1 td { background:#fdf3d7 !important; }
+  tr.r1 td:first-child, tr.r2 td:first-child, tr.r3 td:first-child { font-family:var(--serif); font-weight:800; font-size:22px; }
+  tr.r1 td:first-child { color:#a8791e; }
+  tr.r2 td:first-child { color:#6f7782; }
+  tr.r3 td:first-child { color:#9a5a32; }
+  #rank td, .award td { padding:11px 16px; font-size:20px; }
+  #rank-table td:nth-child(2), #team-table td:nth-child(2), .award td:nth-child(2) { font-weight:700; }
   #team-table th, #team-table td { white-space:nowrap; }
   #team-table td:nth-child(5) { text-align:left; line-height:1.7; }
-  b.pick { background:#a5d6a7; padding:0 4px; border-radius:4px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  b.pick { background:var(--green-l); color:#fff; padding:0 5px; border-radius:4px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   .toolbar { display:flex; gap:12px; align-items:center; margin:12px 0; flex-wrap:wrap; }
-  .saved { color:var(--green); }
+  .saved { color:var(--green-l); font-weight:600; }
   .stats span { margin-right:24px; }
-  .award h3, #rank h3 { margin:20px 0 6px; color:var(--green-d); }
-  .empty { color:#888; }
-  .form label { display:block; margin:14px 0 4px; font-weight:bold; }
-  .form input[type=text], .form input[type=date] { width:22em; max-width:100%; padding:8px; }
-  .form td input { width:9em; padding:6px; }
+  .award h3, #rank h3 { margin:26px 0 10px; font-family:var(--serif); font-size:24px; color:var(--green); }
+  .empty { color:#8a8f86; }
+  .form label { display:block; margin:18px 0 6px; font-weight:bold; color:var(--green); }
+  .form input[type=text], .form input[type=date], .form select { width:22em; max-width:100%; padding:10px; border:1px solid #d9cfb6; border-radius:6px; background:var(--paper); }
+  .form select { width:auto; }
+  .form td input { width:9em; padding:8px; border:1px solid #d9cfb6; border-radius:6px; background:var(--paper); }
   .form td input.par { width:4em; text-align:center; }
-  .form label.chk { display:inline-block; margin:4px 20px 4px 0; font-weight:normal; }
-  .form label.chk input { width:20px; height:20px; vertical-align:middle; }
+  .form label.chk { display:inline-block; margin:4px 20px 4px 0; font-weight:normal; color:#1f2a22; }
+  .form label.chk input { width:22px; height:22px; vertical-align:middle; accent-color:var(--green); }
+
+  /* TV 모드: 본부석 TV·빔프로젝터용 전광판. 어두운 바탕에 큰 숫자 */
+  #tv-off { display:none; }
+  body.tv { background:#0d1512; color:#e8f0ec; font-size:26px; }
+  body.tv nav, body.tv #rank .toolbar, body.tv #rank .hint { display:none; }
+  body.tv header { background:none; padding:28px 40px 0; color:#fff; }
+  body.tv header h1 { font-size:44px; }
+  body.tv header p { color:#8aa197; }
+  body.tv main { padding:10px 40px 40px; }
+  body.tv #tv-off { display:block; position:fixed; top:20px; right:24px; z-index:9; background:#16211d; color:#8aa197; border-color:#2a3a33; }
+  body.tv #rank h3 { color:#8aa197; font-family:inherit; font-size:24px; letter-spacing:2px; }
+  body.tv .scroll { box-shadow:none; width:auto; }
+  body.tv table { width:100%; background:none; border-collapse:separate; border-spacing:0 10px; }
+  body.tv #rank th { background:none; color:#6b8278; font-size:18px; letter-spacing:1px; padding:0 14px; }
+  body.tv #rank td { background:#131d19 !important; color:#e8f0ec; border:none; padding:18px 14px; font-size:30px; font-variant-numeric:tabular-nums; }
+  body.tv #rank td:first-child { border-radius:12px 0 0 12px; font-size:34px; font-weight:900; color:#4ade80; font-family:inherit; }
+  body.tv td:last-child { border-radius:0 12px 12px 0; }
+  body.tv #rank tr.r1 td { background:#1d3a2a !important; }
+  body.tv #rank tr.r1 td:first-child { color:#facc15; box-shadow:inset 6px 0 0 #facc15; }
+  body.tv #rank tr.r2 td:first-child { color:#cbd5e1; }
+  body.tv #rank tr.r3 td:first-child { color:#fb923c; }
+  body.tv #rank #team-table td:nth-child(5) { font-size:22px; }
+  body.tv b.pick { background:#4ade80; color:#0d1512; }
+  body.tv .empty { color:#6b8278; }
+
   @media print {
-    nav, .toolbar, .hint, .noprint { display:none !important; }
+    nav, .toolbar, .hint, .noprint, #tv-off { display:none !important; }
+    .scroll { box-shadow:none; width:auto; }
+    tr.r1 td:first-child, tr.r2 td:first-child, tr.r3 td:first-child { font-size:inherit; }
     body { font-size:11pt; background:#fff; }
     header { background:none; color:#000; padding:0 0 8px; }
     main { padding:0; }
@@ -75,6 +121,7 @@
 </head>
 <body>
 <header><h1 id="h-title"></h1><p id="h-sub"></p></header>
+<button class="btn" id="tv-off">TV 화면 끄기 (Esc)</button>
 <nav>
   <button data-tab="input">성적 입력</button>
   <button data-tab="rank">순위표</button>
@@ -102,6 +149,7 @@
   <section id="rank">
     <div class="toolbar">
       <button class="btn main" onclick="window.print()">인쇄하기</button>
+      <button class="btn gold" id="tv-on">📺 TV로 크게 보기</button>
       <span class="stats" id="stats"></span>
     </div>
     <p class="hint" id="rule"></p>
@@ -522,6 +570,26 @@ function showTab(tab) {
 }
 function showAll() { renderHeader(); showTab(document.querySelector('nav button.on')?.dataset.tab || 'input'); }
 document.querySelector('nav').onclick = e => { if (e.target.dataset.tab) showTab(e.target.dataset.tab); };
+
+// ---------- TV 모드 ----------
+// 창을 하나 더 열어 TV 모드로 두면, 다른 창에서 점수를 적을 때마다 순위가 바로 바뀐다
+function setTV(on) {
+  document.body.classList.toggle('tv', on);
+  try {
+    if (on) document.documentElement.requestFullscreen?.().catch(() => {});
+    else if (document.fullscreenElement) document.exitFullscreen();
+  } catch (e) {}
+}
+$('tv-on').onclick = () => setTV(true);
+$('tv-off').onclick = () => setTV(false);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') setTV(false); });
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) setTV(false); });
+window.addEventListener('storage', e => {
+  if (e.key !== KEY || !document.body.classList.contains('tv')) return;
+  try { state = normalize(JSON.parse(e.newValue)); } catch (err) { return; }
+  renderHeader();
+  renderRank();
+});
 
 renderHeader();
 let startTab = 'input';
