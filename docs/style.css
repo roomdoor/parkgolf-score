@@ -69,7 +69,14 @@ tr.r3 td:first-child { color:#9a5a32; }
 #rank td, .award td { padding:11px 16px; font-size:20px; }
 #rank-table td:nth-child(2), #team-table td:nth-child(2), .award td:nth-child(2) { font-weight:700; }
 #team-table th, #team-table td { white-space:nowrap; }
+#rank td:first-child, #rank-table td, #club-table td:nth-child(2) { white-space:nowrap; }
+/* 표마다 칸 수가 달라도 가로 폭을 화면 너비로 맞춘다 */
+#rank .scroll { width:auto; }
+#rank table { width:100%; }
+/* 클럽 점수 내역: 한 줄에 하나씩 */
+#rank #club-table td:last-child:not(:first-child) { text-align:left; font-size:17px; line-height:1.7; color:#3d4a41; }
 #team-table td:nth-child(5) { text-align:left; line-height:1.7; }
+#rank tr.div-head td { background:var(--cream) !important; text-align:left; font-family:var(--serif); font-weight:800; font-size:20px; color:var(--green); padding-top:18px; }
 b.pick { background:var(--green-l); color:#fff; padding:0 5px; border-radius:4px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .stats span { margin-right:24px; }
 .award h3, #rank h3 { margin:26px 0 10px; font-family:var(--serif); font-size:24px; color:var(--green); }
@@ -109,7 +116,7 @@ body.tv #tv-off { display:block; position:fixed; top:20px; right:24px; z-index:9
 body.tv #rank h3 { color:#8aa197; font-family:inherit; font-size:24px; letter-spacing:2px; }
 body.tv .scroll { box-shadow:none; width:auto; }
 body.tv table { width:100%; background:none; border-collapse:separate; border-spacing:0 10px; }
-body.tv #rank th { background:none; color:#6b8278; font-size:18px; letter-spacing:1px; padding:0 14px; }
+body.tv #rank th { background:none; color:#8aa197; font-size:22px; letter-spacing:1px; padding:0 14px; }
 body.tv #rank td { background:#131d19 !important; color:#e8f0ec; border:none; padding:18px 14px; font-size:30px; font-variant-numeric:tabular-nums; }
 body.tv #rank td:first-child { border-radius:12px 0 0 12px; font-size:34px; font-weight:900; color:#4ade80; font-family:inherit; }
 body.tv td:last-child { border-radius:0 12px 12px 0; }
@@ -117,7 +124,11 @@ body.tv #rank tr.r1 td { background:#1d3a2a !important; }
 body.tv #rank tr.r1 td:first-child { color:#facc15; box-shadow:inset 6px 0 0 #facc15; }
 body.tv #rank tr.r2 td:first-child { color:#cbd5e1; }
 body.tv #rank tr.r3 td:first-child { color:#fb923c; }
-body.tv #rank #team-table td:nth-child(5) { font-size:22px; }
+body.tv #rank #team-table td:nth-child(5), body.tv #rank #club-table td:last-child:not(:first-child) { font-size:22px; }
+/* 단체전 '확인' 칸(남녀 섞임 등)은 운영자용이라 TV에선 숨긴다 */
+body.tv #team-table tr:not(.div-head) > :last-child:not(:first-child) { display:none; }
+body.tv #rank #team-table tr:not(.div-head) > td:nth-last-child(2) { border-radius:0 12px 12px 0; }
+body.tv #rank tr.div-head td { background:none !important; color:#facc15; font-size:26px; font-weight:800; letter-spacing:2px; padding:16px 14px 0; }
 body.tv b.pick { background:#4ade80; color:#0d1512; }
 body.tv .empty { color:#6b8278; }
 
