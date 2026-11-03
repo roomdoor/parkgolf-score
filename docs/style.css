@@ -37,7 +37,8 @@ input, select { font-size:19px; font-family:inherit; }
 
 /* ---------- 성적 입력 ---------- */
 #entry input, #entry select { font-size:22px; border:1px solid #d9cfb6; background:var(--yellow); padding:8px 6px; border-radius:6px; color:#1f2a22; }
-#entry input:focus, #entry select:focus { outline:3px solid var(--gold); outline-offset:1px; background:#fff; }
+/* 고른 칸은 왼쪽에 붙인 이름 칸(z-index:1)보다 위로 올려 테두리가 가려지지 않게 */
+#entry input:focus, #entry select:focus { outline:3px solid var(--gold); outline-offset:1px; background:#fff; position:relative; z-index:2; }
 #entry tbody tr:focus-within td { background:#f3ecd6; }
 #entry tbody tr.err td { background:#fdecea; }
 #entry tbody tr.found td { background:#f7e3a1; }
@@ -46,11 +47,13 @@ input, select { font-size:19px; font-family:inherit; }
 #find { width:8em; padding:8px; border:1px solid #d9cfb6; border-radius:6px; }
 #group-filter { padding:8px; border:1px solid #d9cfb6; border-radius:6px; }
 #entry th, #entry td.st { white-space:nowrap; }
-#entry th.sort { cursor:pointer; user-select:none; position:relative; padding-left:2.4em; padding-right:2.4em; }
+#entry th.sort { cursor:pointer; user-select:none; position:relative; padding-left:1.6em; padding-right:1.6em; }
 #entry th.sort:hover { color:#fff; background:var(--green-l); }
 /* 아이콘은 오른쪽 여백에 띄워서 글자만 가운데. 양쪽 여백을 같게 둬서 ⇅ ↔ ①▲ 로 바뀌어도 칸 너비가 그대로 */
-#entry th.sort i { position:absolute; right:.4em; top:50%; transform:translateY(-50%); width:2em; text-align:right; font-style:normal; opacity:.7; }
+#entry th.sort i { position:absolute; right:.2em; top:50%; transform:translateY(-50%); width:1.4em; text-align:right; font-style:normal; font-size:.8em; opacity:.7; }
 #entry th.sort.on { color:#fff; }
+/* 좁은 화면에서 옆으로 밀어도 누구 줄인지 보이게 이름 칸을 왼쪽에 붙인다 */
+#entry tr > :nth-child(2) { position:sticky; left:0; z-index:1; }
 #entry th.sort.on i { opacity:1; color:var(--gold); }
 #entry .name, #entry .club { width:6em; }
 #entry .grp { width:3.5em; }
@@ -71,13 +74,18 @@ input, select { font-size:19px; font-family:inherit; }
 /* 순위 1·2·3 위: 금·은·동 */
 tr.r1 td { background:#fdf3d7 !important; }
 tr.r1 td:first-child, tr.r2 td:first-child, tr.r3 td:first-child { font-family:var(--serif); font-weight:800; font-size:22px; }
-tr.r1 td:first-child { color:#a8791e; }
-tr.r2 td:first-child { color:#6f7782; }
-tr.r3 td:first-child { color:#9a5a32; }
+tr.r1 td:first-child, .medal.m1 .place { color:#a8791e; }
+tr.r2 td:first-child, .medal.m2 .place { color:#6f7782; }
+tr.r3 td:first-child, .medal.m3 .place { color:#9a5a32; }
 #rank td, .award td { padding:11px 16px; font-size:20px; }
 #rank-table td:nth-child(2), #team-table td:nth-child(2), .award td:nth-child(2) { font-weight:700; }
 #team-table th, #team-table td { white-space:nowrap; }
 #rank td:first-child, #rank-table td, #club-table td:nth-child(2) { white-space:nowrap; }
+/* 좁은 화면에서 옆으로 밀어도 순위·이름(팀·클럽) 칸은 왼쪽에 붙여 둔다. --c1 은 첫 칸 너비 (tab-rank.js 가 잰다) */
+#rank tr:not(.div-head) > :nth-child(-n+2) { position:sticky; left:0; z-index:1; }
+#rank tr:not(.div-head) > :nth-child(2) { left:var(--c1, 0); }
+/* 붙인 칸 밑으로 지나가는 글자가 비치지 않게. 줄무늬·메달 색이 이기도록 :where 로 우선순위를 낮춘다 */
+:where(#entry, #rank table) td:nth-child(-n+2) { background:#fff; }
 /* 표마다 칸 수가 달라도 가로 폭을 화면 너비로 맞춘다 */
 #rank .scroll { width:auto; }
 #rank table { width:100%; }
@@ -102,9 +110,6 @@ b.pick { background:var(--green-l); color:#fff; padding:0 5px; border-radius:4px
 .medal.m1 .place::before { background:var(--gold); }
 .medal.m2 .place::before { background:#a9b0b8; }
 .medal.m3 .place::before { background:#b9784a; }
-.medal.m1 .place { color:#a8791e; }
-.medal.m2 .place { color:#6f7782; }
-.medal.m3 .place { color:#9a5a32; }
 .medal .who { font-size:30px; color:var(--green); }
 .medal .sub { color:#5d665f; font-size:17px; }
 
@@ -158,7 +163,7 @@ body.tv #tv-off { display:block; position:fixed; top:20px; right:24px; z-index:9
 body.tv #rank h3 { color:#8aa197; font-family:inherit; font-size:24px; letter-spacing:2px; }
 body.tv .scroll { box-shadow:none; width:auto; }
 body.tv table { width:100%; background:none; border-collapse:separate; border-spacing:0 10px; }
-body.tv #rank th { background:none; color:#8aa197; font-size:22px; letter-spacing:1px; padding:0 14px; }
+body.tv #rank th { background:#0d1512; color:#8aa197; font-size:22px; letter-spacing:1px; padding:0 14px; }
 body.tv #rank td { background:#131d19 !important; color:#e8f0ec; border:none; padding:18px 14px; font-size:30px; font-variant-numeric:tabular-nums; }
 body.tv #rank td:first-child { border-radius:12px 0 0 12px; font-size:34px; font-weight:900; color:#4ade80; font-family:inherit; }
 body.tv td:last-child { border-radius:0 12px 12px 0; }

@@ -1,6 +1,6 @@
 // ---------- 순위표 탭 (+ TV 모드) ----------
 import { isComplete, rankPlayers, makeTeams, teamPicks } from './rank.js';
-import { $, esc, state, diff, indivPlayers, teamPlayers, teamRanking, clubRanking, rankRow } from './common.js';
+import { $, esc, state, diff, indivPlayers, teamPlayers, teamRanking, clubRanking, rankRow, cells } from './common.js';
 
 // 1위 동타는 현장 연장전(서든데스)으로 가린다. 앱은 표시만 한다.
 function playoff(ranked, byGender) {
@@ -18,8 +18,7 @@ function rankBody(ranked, cols, po, byGender, restLabel) {
   return ['남', '여'].map(g => {
     const list = ranked.filter(p => p.divRank && p.gender === g);
     return list.length ? `<tbody>${head(g + '자부')}${list.map(p => rankRow(p, p.divRank, cols, po.has(p))).join('')}</tbody>` : '';
-  }).join('') + (rest.length ? `<tbody>${head(restLabel)}${rest.map(p =>
-    `<tr><td>-</td>${cols(p).map(v => `<td>${v?.html ?? esc(v)}</td>`).join('')}</tr>`).join('')}</tbody>` : '');
+  }).join('') + (rest.length ? `<tbody>${head(restLabel)}${rest.map(p => `<tr><td>-</td>${cells(cols(p))}</tr>`).join('')}</tbody>` : '');
 }
 
 export function renderRank() {
@@ -34,8 +33,16 @@ export function renderRank() {
   if (s.indiv) renderIndivRank();
   if (s.team) renderTeamRank();
   if (s.club) renderClubRank();
+  stickCols();
   tvY = scrollY; // 다시 그려 높이가 줄어 스크롤이 밀린 건 손 스크롤이 아니다 (TV 자동 스크롤이 멈추지 않게)
 }
+
+// 둘째 칸을 첫 칸 바로 오른쪽에 붙이려고 첫 칸 너비를 적어 둔다 (style.css 의 --c1). 화면 폭·TV 글씨 크기·글꼴이 바뀌면 다시 잰다
+function stickCols() {
+  for (const t of $('rank').querySelectorAll('table')) t.style.setProperty('--c1', (t.rows[0]?.cells[0].offsetWidth || 0) + 'px');
+}
+addEventListener('resize', stickCols);
+document.fonts?.addEventListener('loadingdone', stickCols);
 
 function renderClubRank() {
   const list = clubRanking();
@@ -96,6 +103,7 @@ function tvTick() {
 
 function setTV(on) {
   document.body.classList.toggle('tv', on);
+  stickCols();
   clearInterval(tvTimer);
   if (on) { tvY = 0; tvWait = TV_PAUSE; tvToTop = false; scrollTo(0, 0); tvTimer = setInterval(tvTick, 50); }
   try {
