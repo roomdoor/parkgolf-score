@@ -40,6 +40,11 @@ input, select { font-size:19px; font-family:inherit; }
 #entry input:focus, #entry select:focus { outline:3px solid var(--gold); outline-offset:1px; background:#fff; }
 #entry tbody tr:focus-within td { background:#f3ecd6; }
 #entry tbody tr.err td { background:#fdecea; }
+#entry tbody tr.found td { background:#f7e3a1; }
+#entry-help summary { cursor:pointer; font-weight:600; color:var(--green); }
+#entry-help ul { margin:6px 0 0; }
+#find { width:8em; padding:8px; border:1px solid #d9cfb6; border-radius:6px; }
+#group-filter { padding:8px; border:1px solid #d9cfb6; border-radius:6px; }
 #entry th, #entry td.st { white-space:nowrap; }
 #entry th.sort { cursor:pointer; user-select:none; position:relative; padding-left:2.4em; padding-right:2.4em; }
 #entry th.sort:hover { color:#fff; background:var(--green-l); }
