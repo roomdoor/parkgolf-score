@@ -1,6 +1,6 @@
 // ---------- 순위표 탭 (+ TV 모드) ----------
 import { isComplete, rankPlayers, makeTeams, teamPicks } from './rank.js';
-import { KEY, $, esc, state, load, renderHeader, diff, indivPlayers, teamPlayers, teamRanking, clubRanking, rankRow } from './common.js';
+import { $, esc, state, diff, indivPlayers, teamPlayers, teamRanking, clubRanking, rankRow } from './common.js';
 
 // 1위 동타는 현장 연장전(서든데스)으로 가린다. 앱은 표시만 한다.
 function playoff(ranked, byGender) {
@@ -34,6 +34,7 @@ export function renderRank() {
   if (s.indiv) renderIndivRank();
   if (s.team) renderTeamRank();
   if (s.club) renderClubRank();
+  tvY = scrollY; // 다시 그려 높이가 줄어 스크롤이 밀린 건 손 스크롤이 아니다 (TV 자동 스크롤이 멈추지 않게)
 }
 
 function renderClubRank() {
@@ -96,8 +97,6 @@ function tvTick() {
 function setTV(on) {
   document.body.classList.toggle('tv', on);
   clearInterval(tvTimer);
-  // 이 창이 꺼져 있던 동안 다른 창에서 적은 점수를 먼저 읽어 온다
-  if (on) { try { load(localStorage.getItem(KEY)); } catch (e) {} renderHeader(); renderRank(); }
   if (on) { tvY = 0; tvWait = TV_PAUSE; tvToTop = false; scrollTo(0, 0); tvTimer = setInterval(tvTick, 50); }
   try {
     if (on) document.documentElement.requestFullscreen?.().catch(() => {});
@@ -108,9 +107,3 @@ $('tv-on').onclick = () => setTV(true);
 $('tv-off').onclick = () => setTV(false);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') setTV(false); });
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) setTV(false); });
-window.addEventListener('storage', e => {
-  if (e.key !== KEY || !document.body.classList.contains('tv')) return;
-  try { load(e.newValue); } catch (err) { return; }
-  renderHeader();
-  renderRank();
-});
