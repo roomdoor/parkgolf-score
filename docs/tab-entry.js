@@ -25,7 +25,7 @@ export function renderEntry() {
   fillGroups();
   const g = $('group-filter').value;
   const order = sortRows(state.players.keys(), entrySort, entrySortValue).filter(i => !g || state.players[i].group.trim() === g);
-  const rows = order.map(i => [state.players[i], i]).map(([p, i]) => `<tr data-i="${i}">
+  const rows = order.map(i => { const p = state.players[i]; return `<tr data-i="${i}">
     <td class="calc">${i + 1}</td>
     <td><input class="name" data-f="name" value="${esc(p.name)}" aria-label="${i + 1}번 이름"></td>
     <td><select data-f="gender" aria-label="${i + 1}번 성별"><option value=""></option>${opt(p.gender, '남')}${opt(p.gender, '여')}</select></td>
@@ -36,7 +36,7 @@ export function renderEntry() {
     ${p.scores.map((s, k) => `<td><input class="sc" data-f="s${k}" inputmode="numeric" value="${s ?? ''}" aria-label="${i + 1}번 ${esc(c[k])}"></td>`).join('')}
     <td class="calc total"></td><td class="calc st"></td>
     <td><button class="del" title="이 줄 지우기" aria-label="${i + 1}번 줄 지우기">✕</button></td>
-  </tr>`).join('');
+  </tr>`; }).join('');
   const pos = k => entrySort.findIndex(x => x.k === k);
   const arrow = k => (entrySort[pos(k)].dir > 0 ? '▲' : '▼');
   const num = i => (entrySort.length > 1 ? '①②③④⑤⑥⑦⑧⑨'[i] || '' : '');
@@ -164,23 +164,23 @@ $('entry').addEventListener('keydown', e => {
 });
 $('entry').addEventListener('focusin', e => { if (e.target.tagName === 'INPUT') e.target.select(); });
 
+// 칸 제목은 정렬, ✕ 는 줄 지우기
 $('entry').addEventListener('click', e => {
+  const k = e.target.closest('th.sort')?.dataset.sort;
+  if (k) {
+    const cur = entrySort.find(x => x.k === k);
+    if (!cur) entrySort.push({ k, dir: 1 });
+    else if (cur.dir > 0) cur.dir = -1;
+    else entrySort = entrySort.filter(x => x !== cur);
+    renderEntry();
+    return;
+  }
   if (!e.target.classList.contains('del')) return;
   const i = +e.target.closest('tr').dataset.i, p = state.players[i];
   if (status(p) !== '' && !confirm(`${p.name || (i + 1) + '번'} 줄을 지울까요?`)) return;
   state.players.splice(i, 1);
   if (state.players.length === 0) state.players.push(blankPlayer());
   save();
-  renderEntry();
-});
-
-$('entry').addEventListener('click', e => {
-  const k = e.target.closest('th.sort')?.dataset.sort;
-  if (!k) return;
-  const cur = entrySort.find(x => x.k === k);
-  if (!cur) entrySort.push({ k, dir: 1 });
-  else if (cur.dir > 0) cur.dir = -1;
-  else entrySort = entrySort.filter(x => x !== cur);
   renderEntry();
 });
 

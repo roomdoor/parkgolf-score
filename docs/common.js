@@ -105,6 +105,7 @@ export function status(p) {
 export const STATUS_TEXT = { 점수확인: '점수 확인', 이름없음: '이름 없음', 팀없음: '팀 이름 없음', 단체: '단체', 입력중: '입력중', 완료: '완료', '': '' };
 
 // 순위표·시상자 한 줄. cols(p) 의 값이 { html } 이면 그대로, 아니면 글자로 넣는다
+export const cells = vals => vals.map(v => `<td>${v?.html ?? esc(v)}</td>`).join('');
 export function rankRow(p, rank, cols, mark) {
-  return `<tr class="${rank <= 3 ? 'r' + rank : ''}">${[rank + '위' + (mark ? ' (연장전)' : ''), ...cols(p)].map(v => `<td>${v?.html ?? esc(v)}</td>`).join('')}</tr>`;
+  return `<tr class="${rank <= 3 ? 'r' + rank : ''}">${cells([rank + '위' + (mark ? ' (연장전)' : ''), ...cols(p)])}</tr>`;
 }
