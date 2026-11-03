@@ -41,10 +41,10 @@ input, select { font-size:19px; font-family:inherit; }
 #entry tbody tr:focus-within td { background:#f3ecd6; }
 #entry tbody tr.err td { background:#fdecea; }
 #entry th, #entry td.st { white-space:nowrap; }
-#entry th.sort { cursor:pointer; user-select:none; }
+#entry th.sort { cursor:pointer; user-select:none; position:relative; padding-left:2.4em; padding-right:2.4em; }
 #entry th.sort:hover { color:#fff; background:var(--green-l); }
-/* 아이콘 자리 너비를 고정해서 ⇅ ↔ ①▲ 로 바뀌어도 칸 너비가 그대로 */
-#entry th.sort i { display:inline-block; width:2em; margin-left:4px; text-align:left; font-style:normal; opacity:.7; }
+/* 아이콘은 오른쪽 여백에 띄워서 글자만 가운데. 양쪽 여백을 같게 둬서 ⇅ ↔ ①▲ 로 바뀌어도 칸 너비가 그대로 */
+#entry th.sort i { position:absolute; right:.4em; top:50%; transform:translateY(-50%); width:2em; text-align:right; font-style:normal; opacity:.7; }
 #entry th.sort.on { color:#fff; }
 #entry th.sort.on i { opacity:1; color:var(--gold); }
 #entry .name, #entry .club { width:6em; }
