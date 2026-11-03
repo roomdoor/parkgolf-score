@@ -83,11 +83,14 @@ function renderIndivRank() {
 const TV_STEP = 1, TV_PAUSE = 100; // 50ms 마다 1px(초당 20px), 위·아래 끝에서 100번(5초) 멈춤. 빠르면 STEP 을 키운다
 let tvTimer, tvY = 0, tvWait = 0, tvToTop = false;
 function tvTick() {
+  // 사람이 손으로 스크롤했으면 끌어당기지 말고 그 자리에서 잠깐 멈췄다가 이어서 내려간다
+  if (Math.abs(scrollY - tvY) > 2) { tvY = scrollY; tvWait = TV_PAUSE; tvToTop = false; return; }
   if (tvWait > 0) { tvWait--; return; }
   if (tvToTop) { tvToTop = false; tvY = 0; tvWait = TV_PAUSE; scrollTo(0, 0); return; }
-  tvY += TV_STEP;
+  const end = document.documentElement.scrollHeight - innerHeight;
+  tvY = Math.min(tvY + TV_STEP, end);
   scrollTo(0, tvY);
-  if (tvY >= document.documentElement.scrollHeight - innerHeight) { tvToTop = true; tvWait = TV_PAUSE; }
+  if (tvY >= end) { tvToTop = true; tvWait = TV_PAUSE; }
 }
 
 function setTV(on) {
