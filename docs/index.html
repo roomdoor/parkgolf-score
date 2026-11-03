@@ -85,29 +85,35 @@
     <label class="chk"><input type="checkbox" data-s="club"> 클럽 종합</label>
     <div class="kinds">
     <div data-show="indiv">
-      <label for="s-split">개인전 순위</label>
-      <select id="s-split" data-s="indivSplit"><option value="gender">남녀 따로</option><option value="all">남녀 통합</option></select>
-      <label for="s-award">개인전 시상</label>
-      <select id="s-award" data-s="awardN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지
+      <h3>개인전</h3>
+      <div class="inline">
+        <select id="s-split" data-s="indivSplit" aria-label="개인전 순위 방식"><option value="gender">남녀 따로</option><option value="all">남녀 통합</option></select>
+        <select id="s-award" data-s="awardN" aria-label="개인전 시상"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지 시상
+      </div>
     </div>
     <div data-show="team">
-      <label for="s-tsplit">단체전 방식</label>
-      <select id="s-tsplit" data-s="teamSplit"><option value="gender">남녀 따로</option><option value="mixed">혼성(복식)</option></select>
-      <label for="s-taward">단체전 시상</label>
-      <select id="s-taward" data-s="teamAwardN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지
-      <p class="hint">입력표 '팀' 칸에 같은 팀 이름을 적은 선수끼리 한 팀입니다. 코스마다 팀원 중 가장 적은 타수가 팀 점수입니다.</p>
+      <h3>단체전</h3>
+      <div class="inline">
+        <select id="s-tsplit" data-s="teamSplit" aria-label="단체전 방식"><option value="gender">남녀 따로</option><option value="mixed">혼성(복식)</option></select>
+        <select id="s-taward" data-s="teamAwardN" aria-label="단체전 시상"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지 시상
+      </div>
+      <details class="hint"><summary>팀은 어떻게 정해지나요?</summary>
+        입력표 '팀' 칸에 같은 팀 이름을 적은 선수끼리 한 팀입니다. 코스마다 팀원 중 가장 적은 타수가 팀 점수입니다.</details>
     </div>
     <div data-show="club">
-      <label for="s-ipts">클럽 종합: 개인전 순위별 점수 (1위부터, 쉼표로)</label>
+      <h3>클럽 종합</h3>
+      <div class="inline">
+        <select id="s-caward" data-s="clubAwardN" aria-label="클럽 종합 시상"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지 시상
+      </div>
+      <label for="s-ipts">개인전 순위별 점수 (1위부터, 쉼표로)</label>
       <input type="text" id="s-ipts" data-pts="indivPts" pattern="[0-9 ,]*" placeholder="예: 6, 4, 3, 2, 1">
       <span class="err">숫자와 쉼표만 적어 주세요</span>
-      <label for="s-tpts">클럽 종합: 단체전 순위별 점수 (1위부터, 쉼표로)</label>
+      <label for="s-tpts">단체전 순위별 점수 (1위부터, 쉼표로)</label>
       <input type="text" id="s-tpts" data-pts="teamPts" pattern="[0-9 ,]*" placeholder="예: 8, 6, 4, 2">
       <span class="err">숫자와 쉼표만 적어 주세요</span>
-      <label for="s-caward">클럽 종합 시상</label>
-      <select id="s-caward" data-s="clubAwardN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지
-      <p class="hint">남녀 따로면 남자부·여자부 순위에 각각 점수를 줍니다. 공동 순위는 같은 점수입니다.
-        총점이 같으면 단체전 타수 합이 적은 클럽, (단체전 남녀 따로일 때) 그다음 여자팀 타수 합이 적은 클럽이 앞섭니다.</p>
+      <details class="hint"><summary>점수는 어떻게 매기나요?</summary>
+        남녀 따로면 남자부·여자부 순위에 각각 점수를 줍니다. 공동 순위는 같은 점수입니다.
+        총점이 같으면 단체전 타수 합이 적은 클럽, (단체전 남녀 따로일 때) 그다음 여자팀 타수 합이 적은 클럽이 앞섭니다.</details>
     </div>
     </div>
     </div>
