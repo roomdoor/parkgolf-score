@@ -1,7 +1,7 @@
 // 실행: node --test test/
 const test = require('node:test');
 const assert = require('node:assert');
-const { rankPlayers, awards, makeTeams, rankTeams, clubStandings, isScore } = require('../docs/rank.js');
+const { rankPlayers, awards, makeTeams, rankTeams, clubStandings, isScore, sortRows } = require('../docs/rank.js');
 
 const P = (name, gender, ...scores) => ({ name, gender, club: '', group: '', scores });
 const T = (team, club, name, gender, ...scores) => ({ name, gender, club, group: '', team, scores });
@@ -152,4 +152,30 @@ test('클럽 종합: 통합 순위 기준 점수, 점수표보다 낮은 순위�
   const r = clubStandings(indiv, [], { indivByGender: false, teamByGender: true, indivPts: [6, 4], teamPts: [] });
   assert.deepStrictEqual(r.map(c => [c.rank, c.club, c.points, c.detail]),
     [[1, '부계', 6, ['개인 1위 갑 6점']], [2, '한티', 4, ['개인 2위 을 4점']]]);
+});
+
+// 입력표 정렬: id 는 줄 번호, 빈칸은 null
+const ROWS = [
+  { name: '정', group: '2', total: 130 }, { name: '갑', group: '1', total: 128 }, { name: '', group: null, total: null },
+  { name: '을', group: '2', total: 128 }, { name: '병', group: '1', total: 135 },
+];
+const sortBy = keys => sortRows(ROWS.keys(), keys, (i, k) => ROWS[i][k] || null).map(i => ROWS[i].name || '빈칸');
+
+test('정렬: 기준 없으면 원래 순서', () => {
+  assert.deepStrictEqual(sortBy([]), ['정', '갑', '빈칸', '을', '병']);
+});
+
+test('정렬: 숫자 오름·내림, 빈칸은 방향과 상관없이 아래, 같으면 원래 순서', () => {
+  assert.deepStrictEqual(sortBy([{ k: 'total', dir: 1 }]), ['갑', '을', '정', '병', '빈칸']);
+  assert.deepStrictEqual(sortBy([{ k: 'total', dir: -1 }]), ['병', '정', '갑', '을', '빈칸']);
+});
+
+test('정렬: 글자는 가나다순', () => {
+  assert.deepStrictEqual(sortBy([{ k: 'name', dir: 1 }]), ['갑', '병', '을', '정', '빈칸']);
+});
+
+test('정렬: 여러 기준은 앞 기준이 같을 때만 다음 기준으로', () => {
+  assert.deepStrictEqual(sortBy([{ k: 'group', dir: 1 }, { k: 'total', dir: 1 }]), ['갑', '병', '을', '정', '빈칸']);
+  assert.deepStrictEqual(sortBy([{ k: 'group', dir: -1 }, { k: 'total', dir: -1 }]), ['정', '을', '병', '갑', '빈칸']);
+  assert.deepStrictEqual(sortBy([{ k: 'total', dir: 1 }, { k: 'name', dir: -1 }]), ['을', '갑', '정', '병', '빈칸']);
 });

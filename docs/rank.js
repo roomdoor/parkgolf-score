@@ -107,4 +107,20 @@ function awards(ranked, n, byGender = true) {
   };
 }
 
-if (typeof module !== 'undefined') module.exports = { rankPlayers, awards, isComplete, isScore, makeTeams, rankTeams, clubStandings };
+// 입력표 여러 칸 정렬: keys 앞쪽 기준부터 비교 ([{ k, dir: 1 | -1 }]). value(id, k) 가 null(빈칸)이면
+// 방향과 상관없이 아래로. 글자는 가나다순. 모든 기준이 같으면 원래 순서(id 작은 쪽)가 앞.
+function sortRows(ids, keys, value) {
+  return [...ids].sort((a, b) => {
+    for (const { k, dir } of keys) {
+      const x = value(a, k), y = value(b, k);
+      if (x === y) continue;
+      if (x === null) return 1;
+      if (y === null) return -1;
+      const d = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'ko');
+      if (d) return d * dir;
+    }
+    return a - b;
+  });
+}
+
+if (typeof module !== 'undefined') module.exports = { rankPlayers, awards, isComplete, isScore, makeTeams, rankTeams, clubStandings, sortRows };
