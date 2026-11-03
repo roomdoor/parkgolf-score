@@ -93,10 +93,15 @@ b.pick { background:var(--green-l); color:#fff; padding:0 5px; border-radius:4px
 .medals { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:12px; }
 .medal { display:flex; flex-direction:column; gap:4px; min-width:220px; padding:16px 22px; border-radius:10px; background:#fff;
   border-top:6px solid; box-shadow:0 1px 3px rgba(60,50,20,.12); -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.medal.m1 { border-color:var(--gold); background:#fdf3d7; }
-.medal.m2 { border-color:#a9b0b8; }
-.medal.m3 { border-color:#b9784a; }
+.medal.m1 { border-top-color:var(--gold); background:#fdf3d7; }
+.medal.m2 { border-top-color:#a9b0b8; }
+.medal.m3 { border-top-color:#b9784a; }
 .medal .place { font-family:var(--serif); font-weight:800; font-size:20px; }
+/* 메달 이모지는 오래된 Windows·프린터에서 깨져서 색 원으로 그린다 */
+.medal .place::before { content:''; display:inline-block; width:.8em; height:.8em; margin-right:6px; border-radius:50%; }
+.medal.m1 .place::before { background:var(--gold); }
+.medal.m2 .place::before { background:#a9b0b8; }
+.medal.m3 .place::before { background:#b9784a; }
 .medal.m1 .place { color:#a8791e; }
 .medal.m2 .place { color:#6f7782; }
 .medal.m3 .place { color:#9a5a32; }
