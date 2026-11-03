@@ -96,6 +96,8 @@ function tvTick() {
 function setTV(on) {
   document.body.classList.toggle('tv', on);
   clearInterval(tvTimer);
+  // 이 창이 꺼져 있던 동안 다른 창에서 적은 점수를 먼저 읽어 온다
+  if (on) { try { load(localStorage.getItem(KEY)); } catch (e) {} renderHeader(); renderRank(); }
   if (on) { tvY = 0; tvWait = TV_PAUSE; tvToTop = false; scrollTo(0, 0); tvTimer = setInterval(tvTick, 50); }
   try {
     if (on) document.documentElement.requestFullscreen?.().catch(() => {});
