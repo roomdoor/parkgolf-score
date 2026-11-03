@@ -71,7 +71,7 @@
     </div>
     </div>
     <div class="card">
-    <h2>코스 이름과 기준타수</h2>
+    <h2>코스 설정</h2>
     <table id="course-table"></table>
     <div class="toolbar">
       <button class="btn" id="add-course">+ 코스 추가</button>
@@ -79,7 +79,7 @@
     </div>
     </div>
     <div class="card wide">
-    <h2>경기 종류와 시상</h2>
+    <h2>경기 설정</h2>
     <label class="chk"><input type="checkbox" data-s="indiv"> 개인전</label>
     <label class="chk"><input type="checkbox" data-s="team"> 단체전</label>
     <label class="chk"><input type="checkbox" data-s="club"> 클럽 종합</label>
@@ -99,9 +99,11 @@
     </div>
     <div data-show="club">
       <label for="s-ipts">클럽 종합: 개인전 순위별 점수 (1위부터, 쉼표로)</label>
-      <input type="text" id="s-ipts" data-pts="indivPts">
+      <input type="text" id="s-ipts" data-pts="indivPts" pattern="[0-9 ,]*" placeholder="예: 6, 4, 3, 2, 1">
+      <span class="err">숫자와 쉼표만 적어 주세요</span>
       <label for="s-tpts">클럽 종합: 단체전 순위별 점수 (1위부터, 쉼표로)</label>
-      <input type="text" id="s-tpts" data-pts="teamPts">
+      <input type="text" id="s-tpts" data-pts="teamPts" pattern="[0-9 ,]*" placeholder="예: 8, 6, 4, 2">
+      <span class="err">숫자와 쉼표만 적어 주세요</span>
       <label for="s-caward">클럽 종합 시상</label>
       <select id="s-caward" data-s="clubAwardN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지
       <p class="hint">남녀 따로면 남자부·여자부 순위에 각각 점수를 줍니다. 공동 순위는 같은 점수입니다.

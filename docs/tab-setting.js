@@ -40,8 +40,10 @@ onBoth($('setting'), e => {
     s[t.dataset.s] = t.checked;
     if (!s.indiv && !s.team) s[t.dataset.s] = true; // 둘 중 하나는 켜져 있어야 함
     renderSetting();
-  } else if (t.dataset.pts) s[t.dataset.pts] = t.value.split(/[^0-9]+/).filter(Boolean).map(Number);
-  else if (t.dataset.s) s[t.dataset.s] = ['awardN', 'teamAwardN', 'clubAwardN'].includes(t.dataset.s) ? +t.value : t.value;
+  } else if (t.dataset.pts) {
+    if (!t.checkValidity()) return; // 형식이 틀리면 고칠 때까지 저장하지 않음
+    s[t.dataset.pts] = t.value.split(/[^0-9]+/).filter(Boolean).map(Number);
+  } else if (t.dataset.s) s[t.dataset.s] = ['awardN', 'teamAwardN', 'clubAwardN'].includes(t.dataset.s) ? +t.value : t.value;
   else if (t.dataset.c) s.courses[+t.dataset.c] = t.value;
   else if (t.dataset.p) {
     t.value = t.value.replace(/\D/g, '').slice(0, 2);
