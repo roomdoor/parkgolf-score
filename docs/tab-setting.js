@@ -5,7 +5,11 @@ export function renderSetting() {
   const s = state.settings;
   ['title', 'date', 'place', 'awardN', 'indivSplit', 'teamSplit', 'teamAwardN', 'clubAwardN'].forEach(k => { document.querySelector(`[data-s="${k}"]`).value = s[k]; });
   ['indivPts', 'teamPts'].forEach(k => { document.querySelector(`[data-pts="${k}"]`).value = s[k].join(', '); });
-  ['indiv', 'team', 'club'].forEach(k => { document.querySelector(`[data-s="${k}"]`).checked = s[k]; });
+  ['indiv', 'team', 'club'].forEach(k => {
+    const c = document.querySelector(`[data-s="${k}"]`);
+    c.checked = s[k];
+    c.parentElement.classList.toggle('on', s[k]); // 예전 사파리는 :has() 를 몰라서 버튼 색은 class 로
+  });
   document.querySelectorAll('[data-show]').forEach(el => { el.disabled = !s[el.dataset.show]; });
   $('course-table').innerHTML = '<tr><th>순서</th><th>코스 이름</th><th>기준타수</th></tr>'
     + s.courses.map((c, i) => `<tr><td>${i + 1}번째</td><td><input data-c="${i}" value="${esc(c)}"></td>
@@ -65,7 +69,7 @@ function samplePlayers() {
   const s = state.settings, players = [];
   const add = (gender, club, event, team = '') => {
     const i = players.length; // 이름은 80명마다 한 번 겹치니 그보다 적게 만든다 (지금 최대 76명)
-    players.push({ name: SUR[i % 20] + GIVEN[gender][(i + Math.floor(i / 20)) % 12], gender, club, group: `${Math.floor(i / 4) + 1}조`, event, team,
+    players.push({ ...blankPlayer(), name: SUR[i % 20] + GIVEN[gender][(i + Math.floor(i / 20)) % 12], gender, club, group: `${Math.floor(i / 4) + 1}조`, event, team,
       scores: s.pars.map(par => Math.min(99, Math.max(9, par - 3 + Math.floor(Math.random() * 11)))) });
   };
   if (s.indiv) for (let i = 0; i < 40; i++) add(i < 24 ? '남' : '여', CLUBS[i % CLUBS.length], '개인');
