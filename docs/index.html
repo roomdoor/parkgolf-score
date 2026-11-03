@@ -66,45 +66,78 @@
 
   <!-- 대회 설정: tab-setting.js -->
   <section id="setting" class="form">
+    <div class="cards">
+    <div class="card">
+    <h2>대회 정보</h2>
     <label for="s-title">대회명</label><input type="text" id="s-title" data-s="title">
-    <label for="s-date">날짜</label><input type="date" id="s-date" data-s="date">
-    <label for="s-place">장소</label><input type="text" id="s-place" data-s="place">
-    <label>코스 이름과 기준타수</label>
+    <div class="row">
+      <div><label for="s-date">날짜</label><input type="date" id="s-date" data-s="date"></div>
+      <div><label for="s-place">장소</label><input type="text" id="s-place" data-s="place"></div>
+    </div>
+    </div>
+    <div class="card">
+    <h2>코스 설정</h2>
     <table id="course-table"></table>
     <div class="toolbar">
       <button class="btn" id="add-course">+ 코스 추가</button>
       <button class="btn danger" id="del-course">− 마지막 코스 빼기</button>
     </div>
-    <label>경기 종류</label>
+    </div>
+    <div class="card wide">
+    <h2>경기 설정</h2>
+    <!-- 경기마다 한 칸: 버튼 아래에 그 경기 설정. 끄면 숨기지 않고 회색으로 잠가서 화면이 안 바뀜 -->
+    <div class="kinds">
+    <div>
     <label class="chk"><input type="checkbox" data-s="indiv"> 개인전</label>
+    <fieldset data-show="indiv">
+      <div class="inline">
+        <select id="s-split" data-s="indivSplit" aria-label="개인전 순위 방식"><option value="gender">남녀 따로</option><option value="all">남녀 통합</option></select>
+        <select id="s-award" data-s="awardN" aria-label="개인전 시상"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지 시상
+      </div>
+    </fieldset>
+    </div>
+    <div>
     <label class="chk"><input type="checkbox" data-s="team"> 단체전</label>
+    <fieldset data-show="team">
+      <div class="inline">
+        <select id="s-tsplit" data-s="teamSplit" aria-label="단체전 방식"><option value="gender">남녀 따로</option><option value="mixed">혼성(복식)</option></select>
+        <select id="s-taward" data-s="teamAwardN" aria-label="단체전 시상"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지 시상
+      </div>
+      <details class="hint"><summary>팀은 어떻게 정해지나요?</summary>
+        입력표 '팀' 칸에 같은 팀 이름을 적은 선수끼리 한 팀입니다. 코스마다 팀원 중 가장 적은 타수가 팀 점수입니다.</details>
+    </fieldset>
+    </div>
+    <div>
     <label class="chk"><input type="checkbox" data-s="club"> 클럽 종합</label>
-    <div data-show="indiv">
-      <label for="s-split">개인전 순위</label>
-      <select id="s-split" data-s="indivSplit"><option value="gender">남녀 따로</option><option value="all">남녀 통합</option></select>
-      <label for="s-award">개인전 시상</label>
-      <select id="s-award" data-s="awardN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지
+    <fieldset data-show="club">
+      <div class="inline">
+        <select id="s-caward" data-s="clubAwardN" aria-label="클럽 종합 시상"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지 시상
+      </div>
+      <label for="s-ipts">개인전 순위별 점수 (1위부터, 쉼표로)</label>
+      <!-- 비우면 점수가 0점이 되니 필수. 쉼표는 전각(，)·가운데점(、)·띄어쓰기도 받는다 -->
+      <input type="text" id="s-ipts" data-pts="indivPts" required pattern="[0-9 ,，、]*[0-9][0-9 ,，、]*" placeholder="예: 6, 4, 3, 2, 1">
+      <span class="err">점수를 쉼표로 나눠 적어 주세요 (예: 6, 4, 3, 2, 1)</span>
+      <label for="s-tpts">단체전 순위별 점수 (1위부터, 쉼표로)</label>
+      <input type="text" id="s-tpts" data-pts="teamPts" required pattern="[0-9 ,，、]*[0-9][0-9 ,，、]*" placeholder="예: 8, 6, 4, 2">
+      <span class="err">점수를 쉼표로 나눠 적어 주세요 (예: 8, 6, 4, 2)</span>
+      <details class="hint"><summary>점수는 어떻게 매기나요?</summary>
+        남녀 따로면 남자부·여자부 순위에 각각 점수를 줍니다. 공동 순위는 같은 점수입니다.
+        총점이 같으면 단체전 타수 합이 적은 클럽, (단체전 남녀 따로일 때) 그다음 여자팀 타수 합이 적은 클럽이 앞섭니다.</details>
+    </fieldset>
     </div>
-    <div data-show="team">
-      <label for="s-tsplit">단체전 방식</label>
-      <select id="s-tsplit" data-s="teamSplit"><option value="gender">남녀 따로</option><option value="mixed">혼성(복식)</option></select>
-      <label for="s-taward">단체전 시상</label>
-      <select id="s-taward" data-s="teamAwardN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지
-      <p class="hint">입력표 '팀' 칸에 같은 팀 이름을 적은 선수끼리 한 팀입니다. 코스마다 팀원 중 가장 적은 타수가 팀 점수입니다.</p>
     </div>
-    <div data-show="club">
-      <label for="s-ipts">클럽 종합: 개인전 순위별 점수 (1위부터, 쉼표로)</label>
-      <input type="text" id="s-ipts" data-pts="indivPts">
-      <label for="s-tpts">클럽 종합: 단체전 순위별 점수 (1위부터, 쉼표로)</label>
-      <input type="text" id="s-tpts" data-pts="teamPts">
-      <label for="s-caward">클럽 종합 시상</label>
-      <select id="s-caward" data-s="clubAwardN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지
-      <p class="hint">남녀 따로면 남자부·여자부 순위에 각각 점수를 줍니다. 공동 순위는 같은 점수입니다.
-        총점이 같으면 단체전 타수 합이 적은 클럽, (단체전 남녀 따로일 때) 그다음 여자팀 타수 합이 적은 클럽이 앞섭니다.</p>
     </div>
-    <label>새 대회 시작</label>
-    <p class="hint">지난 대회 선수가 남아 있으면 아래 버튼으로 지우고 시작하세요. 대회 설정은 남습니다.</p>
-    <button class="btn danger" id="reset">선수와 점수 모두 지우기</button>
+    <!-- 되돌릴 수 없는 버튼이라 다른 설정과 떼어 둔다 -->
+    <div class="card wide danger-zone">
+    <h2>새 대회 시작</h2>
+    <p class="hint">지난 대회 선수가 남아 있으면 아래 버튼으로 지우고 시작하세요. 대회 설정은 남습니다.<br>
+      '예시 선수 넣어 보기'는 지금 경기 설정에 맞춘 가짜 선수와 점수로 순위표·시상자 화면을 미리 볼 때 씁니다.</p>
+    <div class="toolbar">
+      <button class="btn danger" id="reset">선수와 점수 모두 지우기</button>
+      <button class="btn" id="sample">예시 선수 넣어 보기</button>
+    </div>
+    </div>
+    </div>
   </section>
 </main>
 </body>
