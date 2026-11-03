@@ -2,8 +2,6 @@
 import { rankPlayers, awards } from './rank.js';
 import { $, state, esc, diff, indivPlayers, teamRanking, clubRanking, rankRow } from './common.js';
 
-const MEDAL = ['', '🥇', '🥈', '🥉'];
-
 // key: 남녀 따로면 'divRank', 아니면 'rank'. 1~3위는 메달 카드, 4위부터는 표.
 // card(p) → [이름, 아랫줄]
 function awardBlocks(title, n, a, key, heads, cols, card, sudden = true) {
@@ -12,7 +10,7 @@ function awardBlocks(title, n, a, key, heads, cols, card, sudden = true) {
     const top = list.filter(p => p[key] <= 3), rest = list.filter(p => p[key] > 3);
     const cards = top.map(p => {
       const [who, sub] = card(p);
-      return `<div class="medal m${p[key]}"><span class="place">${MEDAL[p[key]]} ${p[key]}위${tie1 && p[key] === 1 ? ' (연장전)' : ''}</span>`
+      return `<div class="medal m${p[key]}"><span class="place">${p[key]}위${tie1 && p[key] === 1 ? ' (연장전)' : ''}</span>`
         + `<b class="who">${esc(who)}</b><span class="sub">${esc(sub)}</span></div>`;
     }).join('');
     const table = rest.length
@@ -35,7 +33,7 @@ export function renderAward() {
     q => [q.name, `${ig ? '' : q.gender + ' · '}${q.club ? q.club + ' · ' : ''}${q.total}타 (${diff(q.total)})`]);
   if (s.team) html += awardBlocks('단체전', s.teamAwardN, awards(teamRanking(), s.teamAwardN, tg), tg ? 'divRank' : 'rank',
     ['팀', '소속', '팀원', '합계', '기준타 대비'], q => [q.name, teamClub(q), q.members.map(m => m.name).join(', '), q.total, diff(q.total)],
-    q => [q.name, `${q.members.map(m => m.name).join(', ')} · ${q.total}타 (${diff(q.total)})`]);
+    q => [q.name, `${teamClub(q) ? teamClub(q) + ' · ' : ''}${q.members.map(m => m.name).join(', ')} · ${q.total}타 (${diff(q.total)})`]);
   if (s.club) html += awardBlocks('클럽 종합', s.clubAwardN, { '': clubRanking().filter(c => c.rank <= s.clubAwardN && c.points > 0) }, 'rank',
     ['클럽', '총점'], q => [q.club, q.points], q => [q.club, `총점 ${q.points}점`], false);
   $('award-list').innerHTML = html;
