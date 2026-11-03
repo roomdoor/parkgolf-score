@@ -33,6 +33,35 @@ function rankPlayers(players) {
   return ranked;
 }
 
+// 단체전: 팀 이름이 같은 선수끼리 한 팀. 코스마다 팀원 중 가장 적은 타수가 팀 점수.
+// 카드에 팀 점수 하나만 적히는 대회는 한 사람 줄에만 적으면 그대로 팀 점수가 된다.
+function makeTeams(players, nCourses) {
+  const map = new Map();
+  for (const p of players) {
+    const key = p.team.trim();
+    if (!key || !p.name.trim()) continue;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(p);
+  }
+  return [...map].map(([name, members]) => {
+    const scores = Array.from({ length: nCourses }, (_, k) => {
+      const v = members.map(m => m.scores[k]).filter(isScore);
+      return v.length ? Math.min(...v) : null;
+    });
+    const genders = new Set(members.map(m => m.gender));
+    const clubs = new Set(members.map(m => m.club.trim()));
+    return {
+      name, members, scores,
+      gender: genders.size === 1 ? members[0].gender : '혼성',
+      club: clubs.size === 1 ? members[0].club.trim() : '',
+      mixedClub: clubs.size > 1,
+    };
+  });
+}
+
+// 팀 순위는 개인과 같은 규칙. 남자팀·여자팀이면 divRank 도 붙는다.
+const rankTeams = (players, nCourses) => rankPlayers(makeTeams(players, nCourses));
+
 // 시상자: 순위가 n 이하인 선수 전부 (공동 순위면 n명을 넘을 수 있음)
 // byGender 면 남자부·여자부 따로, 아니면 통합 하나
 function awards(ranked, n, byGender = true) {
@@ -43,4 +72,4 @@ function awards(ranked, n, byGender = true) {
   };
 }
 
-if (typeof module !== 'undefined') module.exports = { rankPlayers, awards, isComplete, isScore };
+if (typeof module !== 'undefined') module.exports = { rankPlayers, awards, isComplete, isScore, makeTeams, rankTeams };

@@ -43,7 +43,7 @@
   .toolbar { display:flex; gap:12px; align-items:center; margin:12px 0; flex-wrap:wrap; }
   .saved { color:var(--green); }
   .stats span { margin-right:24px; }
-  .award h3 { margin:20px 0 6px; color:var(--green-d); }
+  .award h3, #rank h3 { margin:20px 0 6px; color:var(--green-d); }
   .empty { color:#888; }
   .form label { display:block; margin:14px 0 4px; font-weight:bold; }
   .form input[type=text], .form input[type=date] { width:22em; max-width:100%; padding:8px; }
@@ -91,7 +91,8 @@
       <span class="stats" id="stats"></span>
     </div>
     <p class="hint" id="rule"></p>
-    <div class="scroll"><table id="rank-table"></table></div>
+    <div id="indiv-rank"><h3>개인전</h3><div class="scroll"><table id="rank-table"></table></div></div>
+    <div id="team-rank"><h3>단체전</h3><div class="scroll"><table id="team-table"></table></div><p class="hint" id="team-wait"></p></div>
   </section>
 
   <section id="award">
@@ -121,6 +122,8 @@
     <div data-show="team">
       <label for="s-tsplit">단체전 방식</label>
       <select id="s-tsplit" data-s="teamSplit"><option value="gender">남녀 따로</option><option value="mixed">혼성(복식)</option></select>
+      <label for="s-taward">단체전 시상</label>
+      <select id="s-taward" data-s="teamAwardN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지
       <p class="hint">입력표 '팀' 칸에 같은 팀 이름을 적은 선수끼리 한 팀입니다. 코스마다 팀원 중 가장 적은 타수가 팀 점수입니다.</p>
     </div>
     <label>새 대회 시작</label>
@@ -139,7 +142,7 @@ const courseName = i => `${String.fromCharCode(65 + i)}코스`;
 const blankPlayer = (n = state.settings.courses.length) => ({ name: '', gender: '', club: '', group: '', event: '개인', team: '', scores: Array(n).fill(null) });
 const defaults = () => ({
   settings: { title: '제1회 OO 파크골프 대회', date: '', place: '', courses: ['A코스', 'B코스', 'C코스', 'D코스'], pars: [33, 33, 33, 33], awardN: 3, indivSplit: 'gender',
-    indiv: true, team: false, teamSplit: 'gender' },
+    indiv: true, team: false, teamSplit: 'gender', teamAwardN: 3 },
   players: Array.from({ length: 20 }, () => blankPlayer(4)),
 });
 
@@ -160,6 +163,7 @@ function normalize(d) {
       indivSplit: s.indivSplit === 'all' ? 'all' : 'gender',
       indiv: s.indiv !== false || s.team !== true, team: s.team === true,
       teamSplit: s.teamSplit === 'mixed' ? 'mixed' : 'gender',
+      teamAwardN: Math.min(5, Math.max(1, parseInt(s.teamAwardN, 10) || 3)),
     },
     players: d.players.map(p => ({
       name: str(p && p.name), gender: ['남', '여'].includes(p && p.gender) ? p.gender : '',
@@ -289,14 +293,44 @@ function rankRow(p, rank, cols) {
 }
 
 function renderRank() {
+  const s = state.settings;
+  const tie = s.courses.slice(1).reverse();
+  $('rule').textContent = (tie.length ? `합계가 같으면 ${tie.join(', ')} 순으로 타수가 적은 쪽이 앞섭니다. 모두 같으면` : '합계가 같으면')
+    + ' 공동 순위입니다.';
+  $('stats').innerHTML = '';
+  $('indiv-rank').hidden = !s.indiv;
+  $('team-rank').hidden = !s.team;
+  if (s.indiv) renderIndivRank();
+  if (s.team) renderTeamRank();
+}
+
+const teamPlayers = () => state.players.filter(p => eventOf(p) === '단체');
+const teamRanking = () => rankTeams(teamPlayers(), state.settings.courses.length);
+const memberText = t => t.members.map(m => `${m.name}(${m.scores.map(x => x ?? '-').join('·')})`).join(', ');
+
+function teamWarn(t) {
+  return [state.settings.teamSplit === 'gender' && t.gender === '혼성' ? '남녀 섞임' : '', t.mixedClub ? '소속 다름' : '']
+    .filter(Boolean).join(', ');
+}
+
+function renderTeamRank() {
+  const s = state.settings, byGender = s.teamSplit === 'gender', ranked = teamRanking();
+  const waiting = makeTeams(teamPlayers(), s.courses.length).filter(t => !isComplete(t));
+  $('team-wait').textContent = waiting.length
+    ? `입력중인 팀 (모든 코스에 팀원 점수가 하나 이상 있어야 순위에 듭니다): ${waiting.map(t => t.name).join(', ')}` : '';
+  if (!ranked.length) { $('team-table').innerHTML = '<tr><td class="empty">아직 순위가 나온 팀이 없습니다.</td></tr>'; return; }
+  $('team-table').innerHTML = `<thead><tr><th>순위</th><th>팀</th><th>소속</th><th>구분</th><th>팀원 (코스별 점수)</th>
+    ${s.courses.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>기준타 대비</th>${byGender ? '<th>부문 순위</th>' : ''}<th>확인</th></tr></thead><tbody>`
+    + ranked.map(t => rankRow(t, t.rank, q => [q.name, q.club, q.gender, memberText(q), ...q.scores, q.total, diff(q.total),
+      ...(byGender ? [q.divRank ? `${q.gender} ${q.divRank}위` : ''] : []), teamWarn(q)])).join('') + '</tbody>';
+}
+
+function renderIndivRank() {
   const s = state.settings, ranked = rankPlayers(indivPlayers()), byGender = s.indivSplit === 'gender';
   const named = indivPlayers().filter(p => p.name.trim());
   const waiting = named.filter(p => !isComplete(p)).length;
-  $('stats').innerHTML = `<span>참가 ${named.length}명</span><span>순위 확정 ${ranked.length}명</span>`
+  $('stats').innerHTML = `<span>개인전 참가 ${named.length}명</span><span>순위 확정 ${ranked.length}명</span>`
     + (waiting ? `<span class="st-입력중">입력중 ${waiting}명</span>` : '');
-  const tie = s.courses.slice(1).reverse();
-  $('rule').textContent = (tie.length ? `합계가 같으면 ${tie.join(', ')} 순으로 타수가 적은 선수가 앞섭니다. 모두 같으면` : '합계가 같으면')
-    + ' 공동 순위입니다.';
   if (!ranked.length) { $('rank-table').innerHTML = `<tr><td class="empty">아직 ${s.courses.length}개 코스를 모두 입력한 선수가 없습니다.</td></tr>`; return; }
   $('rank-table').innerHTML = `<thead><tr><th>순위</th><th>이름</th><th>성별</th><th>소속</th><th>조</th>
     ${s.courses.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>기준타 대비</th>${byGender ? '<th>부문 순위</th>' : ''}</tr></thead><tbody>`
@@ -305,23 +339,31 @@ function renderRank() {
 }
 
 // ---------- 시상자 ----------
+function awardBlocks(prefix, a, heads, cols) {
+  return Object.entries(a).map(([label, list]) => {
+    const key = label === '통합' ? 'rank' : 'divRank';
+    const body = list.length
+      ? `<table><thead><tr><th>순위</th>${heads.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`
+        + list.map(p => rankRow(p, p[key], cols)).join('') + '</tbody></table>'
+      : '<p class="empty">해당 없음</p>';
+    return `<div class="award"><h3>${prefix} ${label}</h3>${body}</div>`;
+  }).join('');
+}
+
 function renderAward() {
-  const n = state.settings.awardN, a = awards(rankPlayers(indivPlayers()), n, state.settings.indivSplit === 'gender');
-  $('award-list').innerHTML = `<p class="hint">부문별 ${n}등까지 표시합니다. 공동 순위면 모두 표시합니다.</p>`
-    + Object.entries(a).map(([label, list]) => {
-      const key = label === '통합' ? 'rank' : 'divRank';
-      const body = list.length
-        ? `<table><thead><tr><th>순위</th><th>이름</th><th>성별</th><th>소속</th><th>조</th><th>합계</th><th>기준타 대비</th></tr></thead><tbody>`
-          + list.map(p => rankRow(p, p[key], q => [q.name, q.gender, q.club, q.group, q.total, diff(q.total)])).join('') + '</tbody></table>'
-        : '<p class="empty">해당 선수가 없습니다.</p>';
-      return `<div class="award"><h3>${label}</h3>${body}</div>`;
-    }).join('');
+  const s = state.settings;
+  let html = '<p class="hint">공동 순위면 모두 표시합니다.</p>';
+  if (s.indiv) html += awardBlocks(`개인전 (${s.awardN}등까지)`, awards(rankPlayers(indivPlayers()), s.awardN, s.indivSplit === 'gender'),
+    ['이름', '성별', '소속', '조', '합계', '기준타 대비'], q => [q.name, q.gender, q.club, q.group, q.total, diff(q.total)]);
+  if (s.team) html += awardBlocks(`단체전 (${s.teamAwardN}등까지)`, awards(teamRanking(), s.teamAwardN, s.teamSplit === 'gender'),
+    ['팀', '소속', '팀원', '합계', '기준타 대비'], q => [q.name, q.club, q.members.map(m => m.name).join(', '), q.total, diff(q.total)]);
+  $('award-list').innerHTML = html;
 }
 
 // ---------- 대회 설정 ----------
 function renderSetting() {
   const s = state.settings;
-  ['title', 'date', 'place', 'awardN', 'indivSplit', 'teamSplit'].forEach(k => { document.querySelector(`[data-s="${k}"]`).value = s[k]; });
+  ['title', 'date', 'place', 'awardN', 'indivSplit', 'teamSplit', 'teamAwardN'].forEach(k => { document.querySelector(`[data-s="${k}"]`).value = s[k]; });
   ['indiv', 'team'].forEach(k => { document.querySelector(`[data-s="${k}"]`).checked = s[k]; });
   document.querySelectorAll('[data-show]').forEach(el => { el.hidden = !s[el.dataset.show]; });
   $('course-table').innerHTML = '<tr><th>순서</th><th>코스 이름</th><th>기준타수</th></tr>'
@@ -357,7 +399,7 @@ $('setting').addEventListener('input', e => {
     s[t.dataset.s] = t.checked;
     if (!s.indiv && !s.team) s[t.dataset.s] = true; // 둘 중 하나는 켜져 있어야 함
     renderSetting();
-  } else if (t.dataset.s) s[t.dataset.s] = t.dataset.s === 'awardN' ? +t.value : t.value;
+  } else if (t.dataset.s) s[t.dataset.s] = ['awardN', 'teamAwardN'].includes(t.dataset.s) ? +t.value : t.value;
   else if (t.dataset.c) s.courses[+t.dataset.c] = t.value;
   else if (t.dataset.p) {
     t.value = t.value.replace(/\D/g, '').slice(0, 2);
