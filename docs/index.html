@@ -142,7 +142,7 @@
     <ul class="hint">
       <li>노란 칸에 적으면 바로 저장됩니다.</li>
       <li>코스 칸에는 그 코스 9홀 합계를 적습니다. (코스 수는 '대회 설정'에서)</li>
-      <li>Enter를 누르면 아래 칸으로 갑니다. 빨간 줄은 확인이 필요합니다.</li>
+      <li>방향키(↑↓←→)로 칸을 옮깁니다. Enter를 누르면 아래 칸으로 갑니다. 빨간 줄은 확인이 필요합니다.</li>
       <li>칸 제목(⇅ 표시)을 누르면 정렬됩니다. 여러 칸을 차례로 누르면 누른 순서(①②)대로 정렬합니다. 같은 제목을 다시 누르면 거꾸로, 한 번 더 누르면 빠집니다.</li>
       <li id="pick-hint">초록 점수 칸은 단체전 팀 점수로 쓰인 점수(그 코스 팀원 중 최저타)입니다.</li>
     </ul>
@@ -381,10 +381,10 @@ function markPicks() {
   for (const tr of rows) tr.querySelectorAll('.sc').forEach(inp => inp.classList.remove('pick'));
   if (!state.settings.team) return;
   for (const t of makeTeams(teamPlayers(), state.settings.courses.length)) {
-    for (const m of t.members) {
-      const inputs = $('entry').querySelector(`tr[data-i="${state.players.indexOf(m)}"]`).querySelectorAll('.sc');
-      m.scores.forEach((x, k) => { if (x !== null && x === t.scores[k]) inputs[k].classList.add('pick'); });
-    }
+    teamPicks(t).forEach((picks, j) => {
+      const inputs = $('entry').querySelector(`tr[data-i="${state.players.indexOf(t.members[j])}"]`).querySelectorAll('.sc');
+      picks.forEach((on, k) => inputs[k].classList.toggle('pick', on));
+    });
   }
 }
 
@@ -404,12 +404,21 @@ onBoth($('entry'), e => {
   save();
 });
 
+// 엑셀처럼 방향키로 칸 이동. Enter·↓ 는 아래, ↑ 는 위 (정렬된 화면 순서 기준).
+// ←→ 는 글자 맨 앞·맨 끝에 있을 때만 옆 칸으로 (칸에 들어가면 글자가 전체 선택돼서 바로 넘어감).
+// 한글 조합 중에는 움직이지 않는다. 성별·종목 선택칸도 ↑↓ 는 줄 이동 (값은 마우스로 고름).
 $('entry').addEventListener('keydown', e => {
-  if (e.key !== 'Enter' || !e.target.dataset.f) return;
+  const t = e.target;
+  if (!t.dataset.f || e.isComposing || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  const td = t.closest('td'), tr = td.parentElement, rows = tr.parentElement.rows, text = t.tagName === 'INPUT';
+  const cols = [...tr.cells].filter(x => x.querySelector('[data-f]')).map(x => x.cellIndex);
+  const to = moveCell(e.key, tr.sectionRowIndex, td.cellIndex, rows.length, cols,
+    !text || t.selectionStart === 0, !text || t.selectionEnd === t.value.length);
+  if (to === undefined) return;
   e.preventDefault();
-  const next = e.target.closest('tr').nextElementSibling;
-  if (next) next.querySelector(`[data-f="${e.target.dataset.f}"]`).focus();
+  if (to) rows[to[0]].cells[to[1]].querySelector('[data-f]').focus();
 });
+$('entry').addEventListener('focusin', e => { if (e.target.tagName === 'INPUT') e.target.select(); });
 
 $('entry').addEventListener('click', e => {
   if (!e.target.classList.contains('del')) return;
@@ -485,8 +494,8 @@ function renderClubRank() {
 const teamPlayers = () => state.players.filter(p => eventOf(p) === '단체');
 const teamRanking = () => rankTeams(teamPlayers(), state.settings.courses.length);
 // 팀원 한 사람씩 한 줄. 팀 점수로 채택된 점수(코스마다 최저타)는 칠한다
-const memberText = t => ({ html: t.members.map(m => `${esc(m.name)} (${m.scores.map((x, k) =>
-  x === null ? '-' : x === t.scores[k] ? `<b class="pick">${x}</b>` : x).join(', ')})`).join('<br>') });
+const memberText = t => { const picks = teamPicks(t); return { html: t.members.map((m, j) => `${esc(m.name)} (${m.scores.map((x, k) =>
+  x === null ? '-' : picks[j][k] ? `<b class="pick">${x}</b>` : x).join(', ')})`).join('<br>') }; };
 
 function teamWarn(t) {
   const byGender = state.settings.teamSplit === 'gender';

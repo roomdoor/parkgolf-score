@@ -60,6 +60,10 @@ function makeTeams(players, nCourses) {
   });
 }
 
+// 팀원 점수 중 팀 점수로 채택된 것(코스마다 최저타) 표시: 팀원마다 코스별 true/false.
+// 같은 최저타가 여럿이면 모두 true. 오타 코스(팀 점수 빈칸)는 모두 false.
+const teamPicks = t => t.members.map(m => m.scores.map((x, k) => x !== null && x === t.scores[k]));
+
 // 팀 순위는 개인과 같은 규칙. 남자팀·여자팀이면 divRank 도 붙는다.
 const rankTeams = (players, nCourses) => rankPlayers(makeTeams(players, nCourses));
 
@@ -123,4 +127,15 @@ function sortRows(ids, keys, value) {
   });
 }
 
-if (typeof module !== 'undefined') module.exports = { rankPlayers, awards, isComplete, isScore, makeTeams, rankTeams, clubStandings, sortRows };
+// 입력표 방향키 이동: 지금 칸(r 줄, c 칸)에서 key 를 누르면 갈 칸 [줄, 칸].
+// cols 는 적을 수 있는 칸 번호(오름차순). 표 끝이면 null(제자리), 이동할 키가 아니면 undefined(글자 커서가 움직이게 둠).
+// ←→ 는 글자 맨 앞(atStart)·맨 끝(atEnd)일 때만 옆 칸으로.
+function moveCell(key, r, c, nRows, cols, atStart, atEnd) {
+  if (key === 'Enter' || key === 'ArrowDown') return r + 1 < nRows ? [r + 1, c] : null;
+  if (key === 'ArrowUp') return r > 0 ? [r - 1, c] : null;
+  if (key === 'ArrowLeft' && atStart) { const to = cols.filter(x => x < c).pop(); return to === undefined ? null : [r, to]; }
+  if (key === 'ArrowRight' && atEnd) { const to = cols.find(x => x > c); return to === undefined ? null : [r, to]; }
+  return undefined;
+}
+
+if (typeof module !== 'undefined') module.exports = { rankPlayers, awards, isComplete, isScore, makeTeams, rankTeams, clubStandings, sortRows, moveCell, teamPicks };
