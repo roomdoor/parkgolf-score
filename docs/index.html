@@ -33,6 +33,7 @@
   #entry .name, #entry .club { width:7em; }
   #entry .grp { width:3.5em; }
   #entry .sc { width:3em; text-align:center; }
+  #entry input.pick { background:#a5d6a7; border:2px solid var(--green); font-weight:bold; }
   #entry input.bad { border:2px solid var(--red); background:#ffebee; }
   .st-입력중 { color:var(--orange); font-weight:bold; }
   .st-이름없음, .st-점수확인, .st-팀없음 { color:var(--red); font-weight:bold; }
@@ -44,6 +45,9 @@
   tr.r1 td { background:#ffe082; }
   tr.r2 td { background:#e0e0e0; }
   tr.r3 td { background:#ffcc80; }
+  #team-table th, #team-table td { white-space:nowrap; }
+  #team-table td:nth-child(5) { text-align:left; line-height:1.7; }
+  b.pick { background:#a5d6a7; padding:0 4px; border-radius:4px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   .toolbar { display:flex; gap:12px; align-items:center; margin:12px 0; flex-wrap:wrap; }
   .saved { color:var(--green); }
   .stats span { margin-right:24px; }
@@ -85,6 +89,7 @@
       <li>노란 칸에 적으면 바로 저장됩니다.</li>
       <li>코스 칸에는 그 코스 9홀 합계를 적습니다. (코스 수는 '대회 설정'에서)</li>
       <li>Enter를 누르면 아래 칸으로 갑니다. 빨간 줄은 확인이 필요합니다.</li>
+      <li id="pick-hint">초록 점수 칸은 단체전 팀 점수로 쓰인 점수(그 코스 팀원 중 최저타)입니다.</li>
     </ul>
     <div class="scroll"><table id="entry"></table></div>
     <datalist id="club-names"></datalist><datalist id="team-names"></datalist>
@@ -265,6 +270,8 @@ function renderEntry() {
   $('entry').innerHTML = `<thead><tr><th>번호</th><th>이름</th><th>성별</th><th>소속</th><th>조</th>
     ${both ? '<th>종목</th>' : ''}${s.team ? '<th>팀</th>' : ''}${c.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>상태</th><th></th></tr></thead><tbody>${rows}</tbody>`;
   state.players.forEach((_, i) => updateRow(i));
+  markPicks();
+  $('pick-hint').hidden = !s.team;
   fillNames('club');
   fillNames('team');
 }
@@ -287,6 +294,19 @@ function updateRow(i) {
   tr.querySelectorAll('.sc').forEach((inp, k) => inp.classList.toggle('bad', p.scores[k] !== null && !isScore(p.scores[k])));
 }
 
+// 단체전 팀 점수로 쓰인 칸(코스마다 팀원 최저타)을 칠한다. 최저타가 같은 팀원이 여럿이면 모두 칠함
+function markPicks() {
+  const rows = $('entry').tBodies[0].rows;
+  for (const tr of rows) tr.querySelectorAll('.sc').forEach(inp => inp.classList.remove('pick'));
+  if (!state.settings.team) return;
+  for (const t of makeTeams(teamPlayers(), state.settings.courses.length)) {
+    for (const m of t.members) {
+      const inputs = rows[state.players.indexOf(m)].querySelectorAll('.sc');
+      m.scores.forEach((x, k) => { if (x !== null && x === t.scores[k]) inputs[k].classList.add('pick'); });
+    }
+  }
+}
+
 onBoth($('entry'), e => {
   const tr = e.target.closest('tr[data-i]');
   if (!tr) return;
@@ -299,6 +319,7 @@ onBoth($('entry'), e => {
   }
   if ((f === 'club' || f === 'team') && e.type === 'change') fillNames(f); // 다 적고 칸을 벗어날 때만 목록 갱신 (적는 중간 글자는 안 넣음)
   updateRow(i);
+  markPicks(); // 다른 팀원 칸 색도 바뀔 수 있어서 전체를 다시 칠함
   save();
 });
 
@@ -327,7 +348,7 @@ $('add-rows').onclick = () => {
 
 // ---------- 순위표 ----------
 function rankRow(p, rank, cols, mark) {
-  return `<tr class="${rank <= 3 ? 'r' + rank : ''}">${[rank + '위' + (mark ? ' (연장전)' : ''), ...cols(p)].map(v => `<td>${esc(v)}</td>`).join('')}</tr>`;
+  return `<tr class="${rank <= 3 ? 'r' + rank : ''}">${[rank + '위' + (mark ? ' (연장전)' : ''), ...cols(p)].map(v => `<td>${v?.html ?? esc(v)}</td>`).join('')}</tr>`;
 }
 
 // 1위 동타는 현장 연장전(서든데스)으로 가린다. 앱은 표시만 한다.
@@ -370,7 +391,9 @@ function renderClubRank() {
 
 const teamPlayers = () => state.players.filter(p => eventOf(p) === '단체');
 const teamRanking = () => rankTeams(teamPlayers(), state.settings.courses.length);
-const memberText = t => t.members.map(m => `${m.name}(${m.scores.map(x => x ?? '-').join('·')})`).join(', ');
+// 팀원 한 사람씩 한 줄. 팀 점수로 채택된 점수(코스마다 최저타)는 칠한다
+const memberText = t => ({ html: t.members.map(m => `${esc(m.name)} (${m.scores.map((x, k) =>
+  x === null ? '-' : x === t.scores[k] ? `<b class="pick">${x}</b>` : x).join(', ')})`).join('<br>') });
 
 function teamWarn(t) {
   const byGender = state.settings.teamSplit === 'gender';
@@ -384,7 +407,7 @@ function renderTeamRank() {
   $('team-wait').textContent = waiting.length
     ? `입력중인 팀 (모든 코스에 팀원 점수가 하나 이상 있어야 순위에 듭니다): ${waiting.map(t => t.name + (t.badScore ? '(점수 확인)' : '')).join(', ')}` : '';
   if (!ranked.length) { $('team-table').innerHTML = '<tr><td class="empty">아직 순위가 나온 팀이 없습니다.</td></tr>'; return; }
-  $('team-table').innerHTML = `<thead><tr><th>순위</th><th>팀</th><th>소속</th><th>구분</th><th>팀원 (코스별 점수)</th>
+  $('team-table').innerHTML = `<thead><tr><th>순위</th><th>팀</th><th>소속</th><th>구분</th><th>팀원 (코스별 점수, <b class="pick">색칠</b>=팀 점수)</th>
     ${s.courses.map(x => `<th>${esc(x)}</th>`).join('')}<th>합계</th><th>기준타 대비</th>${byGender ? '<th>부문 순위</th>' : ''}<th>확인</th></tr></thead><tbody>`
     + ranked.map(t => rankRow(t, t.rank, q => [q.name, q.club, q.gender, memberText(q), ...q.scores, q.total, diff(q.total),
       ...(byGender ? [divText(q, po)] : []), teamWarn(q)], !byGender && po.has(t))).join('') + '</tbody>';
