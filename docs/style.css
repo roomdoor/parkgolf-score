@@ -70,6 +70,7 @@ tr.r3 td:first-child { color:#9a5a32; }
 #rank-table td:nth-child(2), #team-table td:nth-child(2), .award td:nth-child(2) { font-weight:700; }
 #team-table th, #team-table td { white-space:nowrap; }
 #team-table td:nth-child(5) { text-align:left; line-height:1.7; }
+#rank tr.div-head td { background:var(--cream) !important; text-align:left; font-family:var(--serif); font-weight:800; font-size:20px; color:var(--green); padding-top:18px; }
 b.pick { background:var(--green-l); color:#fff; padding:0 5px; border-radius:4px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .stats span { margin-right:24px; }
 .award h3, #rank h3 { margin:26px 0 10px; font-family:var(--serif); font-size:24px; color:var(--green); }
@@ -104,6 +105,7 @@ body.tv #rank tr.r1 td:first-child { color:#facc15; box-shadow:inset 6px 0 0 #fa
 body.tv #rank tr.r2 td:first-child { color:#cbd5e1; }
 body.tv #rank tr.r3 td:first-child { color:#fb923c; }
 body.tv #rank #team-table td:nth-child(5) { font-size:22px; }
+body.tv #rank tr.div-head td { background:none !important; color:#facc15; font-size:26px; font-weight:800; letter-spacing:2px; padding:16px 14px 0; }
 body.tv b.pick { background:#4ade80; color:#0d1512; }
 body.tv .empty { color:#6b8278; }
 
