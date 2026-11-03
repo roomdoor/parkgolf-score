@@ -1,4 +1,4 @@
-// 실행: node --test test/
+// 실행: node --test test/*.js
 import test from 'node:test';
 import assert from 'node:assert';
 import { rankPlayers, awards, makeTeams, rankTeams, clubStandings, isScore, sortRows, moveCell, teamPicks } from '../docs/rank.js';
