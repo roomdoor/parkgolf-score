@@ -30,8 +30,9 @@ export function renderAward() {
   const ig = s.indivSplit === 'gender', tg = s.teamSplit === 'gender';
   const teamClub = q => q.mixedClub ? '여러 클럽' : q.club;
   if (s.indiv) html += awardBlocks('개인전', s.awardN, awards(rankPlayers(indivPlayers()), s.awardN, ig), ig ? 'divRank' : 'rank',
-    ['이름', '소속', '합계', '기준타 대비'], q => [q.name, q.club, q.total, diff(q.total)],
-    q => [q.name, `${q.club ? q.club + ' · ' : ''}${q.total}타 (${diff(q.total)})`]);
+    // 남녀 통합 시상이면 제목에 성별이 없으니 성별을 함께 보여준다
+    ['이름', ...(ig ? [] : ['성별']), '소속', '합계', '기준타 대비'], q => [q.name, ...(ig ? [] : [q.gender]), q.club, q.total, diff(q.total)],
+    q => [q.name, `${ig ? '' : q.gender + ' · '}${q.club ? q.club + ' · ' : ''}${q.total}타 (${diff(q.total)})`]);
   if (s.team) html += awardBlocks('단체전', s.teamAwardN, awards(teamRanking(), s.teamAwardN, tg), tg ? 'divRank' : 'rank',
     ['팀', '소속', '팀원', '합계', '기준타 대비'], q => [q.name, teamClub(q), q.members.map(m => m.name).join(', '), q.total, diff(q.total)],
     q => [q.name, `${q.members.map(m => m.name).join(', ')} · ${q.total}타 (${diff(q.total)})`]);
