@@ -143,8 +143,9 @@ details.hint summary { cursor:pointer; color:var(--green-l); font-weight:600; }
 .danger-zone h2 { color:var(--red); border-color:#f1d3cf; }
 /* 클럽 점수칸: 형식이 틀리면 빨간 테두리와 안내 */
 .form input:invalid { border-color:var(--red); background:#fdecea; }
-.err { display:none; color:var(--red); font-size:16px; margin-top:4px; }
-input:invalid + .err { display:block; }
+/* .form 으로 묶음: 입력표의 빨간 줄(tr.err)까지 숨기면 안 됨 */
+.form .err { display:none; color:var(--red); font-size:16px; margin-top:4px; }
+.form input:invalid + .err { display:block; }
 /* 휴대폰: 카드 여백을 줄여 코스 표가 카드 밖으로 안 나가게 */
 @media (max-width:600px) {
   .card { padding:4px 14px 16px; }
