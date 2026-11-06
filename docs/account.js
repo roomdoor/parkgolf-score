@@ -115,7 +115,8 @@ $('cloud-login').onclick = cloudTry(async () => {
 });
 $('cloud-logout').onclick = $('gate-logout').onclick = cloudTry(async () => { const f = await sdk(); await f.signOut(f.auth); });
 
-// 탈퇴: 인터넷 저장본 → 가입 문서 → 구글 로그인 계정 순으로 지운다. 중간에 실패해도 다시 누르면 남은 것부터 지운다
+// 탈퇴: 인터넷 저장본 → 가입 문서 → 구글 로그인 계정 순으로 지운다. 저장본 지우다 실패하면 다시 누르면 된다.
+// 마지막 계정 지우기만 실패하면 다음 로그인 때 새 가입 신청으로 보이니, 관리자가 거절하면 된다
 $('withdraw').onclick = cloudTry(async () => {
   if (isAdmin() || !confirm('탈퇴하면 인터넷에 저장한 대회가 모두 지워지고 되돌릴 수 없습니다.\n이 컴퓨터에 있는 지금 대회는 남습니다.\n계속할까요?')) return;
   const f = await sdk();
