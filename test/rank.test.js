@@ -64,6 +64,12 @@ test('단체전: 코스마다 팀원 중 최저타가 팀 점수, 팀 점수 하
   assert.deepStrictEqual(Object.keys(awards(r, 3)), ['남자부', '여자부']);
 });
 
+// 대회 설정의 '예시 2: 팀 점수만 한 줄로 적기' 안내가 기대는 동작
+test('단체전: 팀원이 한 줄뿐인 팀도 그 줄 점수로 순위에 든다', () => {
+  const r = rankTeams([T('남산1', '남산', '남산클럽 1팀', '남', 32, 31), T('한강1', '한강', '갑', '남', 33, 33), T('한강1', '한강', '을', '남', 30, 34)], 2);
+  assert.deepStrictEqual(r.map(t => [t.rank, t.name, t.total, t.members.length]), [[1, '남산1', 63, 1], [2, '한강1', 63, 2]]);
+});
+
 test('클럽 종합: 순위 점수 합산, 동점이면 단체 타수 합 > 여자팀 타수', () => {
   const C = (club, name, gender, ...scores) => ({ ...P(name, gender, ...scores), club });
   const indiv = rankPlayers([

@@ -142,6 +142,7 @@ $('cloud-save').onclick = cloudTry(async () => {
   await api(':commit', { method: 'POST', body: JSON.stringify({ writes: [{
     update: { name: `${DOCS.split('/v1/')[1]}/users/${user.uid}/saves/${crypto.randomUUID()}`, fields: {
       title: { stringValue: title.slice(0, 200) },
+      game: { stringValue: (state.settings.title || '').slice(0, 200) }, // 목록에 대회 이름을 보이려고 따로 둔다 (data 전체를 안 받게)
       data: { stringValue: JSON.stringify(state) },
     } },
     updateTransforms: [{ fieldPath: 'savedAt', setToServerValue: 'REQUEST_TIME' }],
@@ -154,10 +155,14 @@ $('cloud-save').onclick = cloudTry(async () => {
 async function showList() {
   const u = user; // 읽는 사이 다른 계정으로 바뀌면 옛 계정 목록을 그리지 않는다
   cloudMsg('목록 읽는 중…');
-  // shortcut: 대회 이름을 꺼내려고 저장본 전체(data)를 받는다. 저장본이 수백 개로 늘어 느려지면 저장할 때 이름 칸을 따로 두고 firestore.rules 도 고친다
-  const documents = await listAll(`/users/${u.uid}/saves?mask.fieldPaths=title&mask.fieldPaths=savedAt&mask.fieldPaths=data&pageSize=300`);
+  const documents = await listAll(`/users/${u.uid}/saves?mask.fieldPaths=title&mask.fieldPaths=savedAt&mask.fieldPaths=game&pageSize=300`);
+  // game 칸이 생기기 전 저장본만 내용(data)을 받아 대회 이름을 꺼낸다
+  await Promise.all(documents.filter(d => !d.fields.game).map(async d => {
+    const full = await api(d.name.split('/documents')[1] + '?mask.fieldPaths=data');
+    try { d.fields.game = { stringValue: JSON.parse(full.fields.data.stringValue).settings.title || '' }; } catch (e) { d.fields.game = { stringValue: '' }; }
+  }));
   if (u !== user) return;
-  const game = d => { try { return JSON.parse(d.fields.data.stringValue).settings.title || ''; } catch (e) { return ''; } };
+  const game = d => d.fields.game.stringValue;
   // 예전 저장본은 savedAt 이 글자(stringValue), 새 것은 서버 시각(timestampValue). 섞이면 서버 정렬이 어긋나 여기서 정렬한다
   const at = d => new Date(d.fields.savedAt.timestampValue ?? d.fields.savedAt.stringValue);
   documents.sort((a, b) => at(b) - at(a));

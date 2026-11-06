@@ -125,6 +125,7 @@ tr.r3 td:first-child, .medal.m3 .place { color:#9a5a32; }
 .members { text-align:left; line-height:1.7; }
 #rank tr.div-head td { background:var(--cream) !important; text-align:left; font-family:var(--serif); font-weight:800; font-size:26px; color:var(--green); padding-top:18px; }
 #rank tbody + tbody tr.div-head td { padding-top:48px; }
+thead.print-only { display:none; } /* 남녀 따로일 때 인쇄 전용 칸 제목 (tab-rank.js rankBody) */
 b.pick { background:var(--green-l); color:#fff; padding:0 5px; border-radius:4px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .award h3, #rank h3 { margin:26px 0 10px; font-family:var(--serif); font-size:24px; color:var(--green); }
 /* 순위 종류마다 색을 달리해 지금 어느 표인지 바로 보이게 한다: 개인전 녹색, 단체전 남색, 클럽 종합 갈색 */
@@ -239,7 +240,8 @@ body.tv .empty { color:#6b8278; }
   table { width:100%; }
   th, tr.r1 td, tr.r2 td, tr.r3 td { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   th, #rank th { background:#ddd; color:#000; }
-  thead { display:table-header-group; }
+  thead, thead.print-only { display:table-header-group; }
+  tr.div-titles { display:none; }
   tr, .medal { break-inside:avoid; }
   .medal { min-width:0; padding:8px 14px; box-shadow:none; border:1px solid var(--line); border-top:6px solid; }
   .medal .who { font-size:16pt; }
