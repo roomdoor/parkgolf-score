@@ -22,9 +22,7 @@ export function renderEntry() {
     ...(both ? [['event', '종목']] : []), ...(s.team ? [['team', '팀']] : []), ...c.map((x, k) => ['sc' + k, x]), ['total', '합계'], ['st', '상태']];
   const name = Object.fromEntries(cols);
   entrySort = entrySort.filter(x => name[x.k]); // 설정에서 없어진 칸(코스·팀)은 기준에서 뺀다
-  fillGroups();
-  const g = $('group-filter').value;
-  const order = sortRows(state.players.keys(), entrySort, entrySortValue).filter(i => !g || state.players[i].group.trim() === g);
+  const order = sortRows(state.players.keys(), entrySort, entrySortValue);
   const rows = order.map(i => { const p = state.players[i]; return `<tr data-i="${i}">
     <td class="calc">${i + 1}</td>
     <td><input class="name" data-f="name" value="${esc(p.name)}" aria-label="${i + 1}번 이름"></td>
@@ -39,15 +37,13 @@ export function renderEntry() {
   </tr>`; }).join('');
   const pos = k => entrySort.findIndex(x => x.k === k);
   const arrow = k => (entrySort[pos(k)].dir > 0 ? '▲' : '▼');
-  const num = i => (entrySort.length > 1 ? '①②③④⑤⑥⑦⑧⑨'[i] || '' : '');
+  const num = i => (entrySort.length > 1 ? i + 1 : ''); // 동그라미 숫자(①)는 작게 찍혀 안 보여서 그냥 숫자
   const mark = k => pos(k) < 0 ? '⇅' : num(pos(k)) + arrow(k);
   $('entry').innerHTML = `<thead><tr>${cols.map(([k, x]) => `<th class="sort${pos(k) < 0 ? '' : ' on'}" data-sort="${k}" title="눌러서 정렬">${esc(x)}<i>${mark(k)}</i></th>`).join('')}<th></th></tr></thead><tbody>${rows}</tbody>`;
-  // 정렬 줄은 늘 보여서 정렬을 켜고 꺼도 표가 위아래로 움직이지 않는다
+  // 정렬 순서는 칸 제목의 1▲ 로 보인다. 초기화 버튼은 늘 보이고, 정렬이 없으면 흐리게 둔다
   $('sort-off').disabled = !entrySort.length;
-  $('sort-now').textContent = entrySort.map((x, i) => `${num(i)} ${name[x.k]} ${x.dir > 0 ? '▲' : '▼'}`.trim()).join('  →  ') || '원래 순서 (번호순)';
   order.forEach(updateRow);
   markPicks();
-  $('pick-hint').hidden = !s.team;
   fillNames('club');
   fillNames('team');
 }
@@ -56,14 +52,6 @@ export function renderEntry() {
 function fillNames(f) {
   const names = [...new Set(state.players.map(p => p[f].trim()).filter(Boolean))].sort();
   $(f + '-names').innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
-}
-
-// 조 고르기 목록. 고른 조는 선수가 없어져도 목록에 남겨서 화면과 어긋나지 않게
-function fillGroups() {
-  const sel = $('group-filter'), cur = sel.value;
-  const groups = [...new Set([...state.players.map(p => p.group.trim()), cur].filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b, 'ko', { numeric: true }));
-  sel.innerHTML = '<option value="">전체</option>' + groups.map(x => `<option${x === cur ? ' selected' : ''}>${esc(x)}</option>`).join('');
 }
 
 function updateRow(i) {
@@ -86,7 +74,6 @@ function markPicks() {
   for (const t of makeTeams(teamPlayers(), state.settings.courses.length)) {
     teamPicks(t).forEach((picks, j) => {
       const tr = $('entry').querySelector(`tr[data-i="${state.players.indexOf(t.members[j])}"]`);
-      if (!tr) return; // 조별 보기로 숨긴 줄
       const inputs = tr.querySelectorAll('.sc');
       picks.forEach((on, k) => inputs[k].classList.toggle('pick', on));
     });
@@ -105,7 +92,6 @@ onBoth($('entry'), e => {
     p[f] = e.target.value;
   }
   if ((f === 'club' || f === 'team') && e.type === 'change') fillNames(f); // 다 적고 칸을 벗어날 때만 목록 갱신 (적는 중간 글자는 안 넣음)
-  if (f === 'group' && e.type === 'change') fillGroups();
   updateRow(i);
   markPicks(); // 다른 팀원 칸 색도 바뀔 수 있어서 전체를 다시 칠함
   save();
@@ -117,36 +103,24 @@ onBoth($('entry'), e => {
 });
 
 // 이름 찾기: 적는 동안 처음 맞는 줄로 화면을 옮기고, Enter 면 그 선수의 첫 빈 점수 칸(없으면 첫 점수 칸)으로
-// 조별 보기 중 고른 조에 없으면 찾은 선수의 조로 바꿔서 보여 준다
 function findRow() {
   const q = $('find').value.trim();
   $('entry').querySelectorAll('tr.found').forEach(tr => tr.classList.remove('found'));
   if (!q) return null;
-  const match = () => [...$('entry').tBodies[0].rows].find(tr => state.players[+tr.dataset.i].name.includes(q));
-  let tr = match();
-  const other = !tr && $('group-filter').value && state.players.find(p => p.name.includes(q));
-  if (other) {
-    $('group-filter').value = other.group.trim();
-    renderEntry();
-    tr = match();
-  }
+  const tr = [...$('entry').tBodies[0].rows].find(tr => state.players[+tr.dataset.i].name.includes(q));
   tr?.classList.add('found');
   tr?.scrollIntoView({ block: 'center' });
   return tr;
 }
 $('find').addEventListener('input', findRow);
-$('find').addEventListener('keydown', e => {
-  if (e.key !== 'Enter' || e.isComposing) return;
+function goFind() {
   const tr = findRow();
   if (!tr) return;
   const sc = [...tr.querySelectorAll('.sc')];
   (sc.find(x => x.value === '') || sc[0])?.focus();
-});
-
-$('group-filter').onchange = () => renderEntry();
-const help = $('entry-help');
-try { help.open = localStorage.getItem('entry-help') !== 'closed'; } catch (e) { /* 저장 못 하면 늘 펼침 */ }
-help.addEventListener('toggle', () => { try { localStorage.setItem('entry-help', help.open ? 'open' : 'closed'); } catch (e) {} });
+}
+$('find').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) goFind(); });
+$('find-go').onclick = goFind;
 
 // 엑셀처럼 방향키로 칸 이동. Enter·↓ 는 아래, ↑ 는 위 (정렬된 화면 순서 기준).
 // ←→ 는 글자 맨 앞·맨 끝에 있을 때만 옆 칸으로 (칸에 들어가면 글자가 전체 선택돼서 바로 넘어감).
@@ -188,7 +162,6 @@ $('sort-off').onclick = () => { entrySort = []; renderEntry(); };
 
 $('add-rows').onclick = () => {
   for (let k = 0; k < 10; k++) state.players.push(blankPlayer());
-  $('group-filter').value = ''; // 새 줄은 조가 비어 있어서 조별 보기면 안 보임
   save();
   renderEntry();
 };

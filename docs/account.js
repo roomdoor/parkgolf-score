@@ -1,30 +1,11 @@
 // ---------- 로그인, 오른쪽 위 계정 메뉴(승인·로그아웃·탈퇴), 저장·불러오기 탭 ----------
 import { $, esc, state, load, save, renderHeader } from './common.js';
 
-// 그릴 것이 없다. 계정·목록은 로그인과 버튼이 채운다
-export function renderSave() {}
+// 탭을 열 때마다 저장 목록을 새로 읽는다. 다른 컴퓨터에서 저장한 것도 보이게
+export function renderSave() { if (user) showList().catch(e => cloudMsg(e.message)); }
 
 // 메뉴 밖을 누르면 닫는다
 document.addEventListener('click', e => { if (!$('account').contains(e.target)) $('account').open = false; });
-
-// 다른 컴퓨터로 옮길 때 쓰는 파일. 이름에 저장 시각을 붙여 중간 저장본끼리 구분한다
-$('export').onclick = () => {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], { type: 'application/json' }));
-  const when = new Date().toLocaleString('sv-SE').slice(0, 16).replace(':', ''); // 2026-11-06 1430
-  a.download = `${(state.settings.title || '파크골프 대회').replace(/[\\/:*?"<>|]/g, '')} ${when}.json`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-};
-
-$('import').onchange = async e => {
-  const f = e.target.files[0];
-  e.target.value = ''; // 같은 파일을 다시 골라도 동작하게
-  if (!f || !confirm('지금 대회 설정·선수·점수가 파일 내용으로 바뀝니다. 되돌릴 수 없습니다.\n계속할까요?')) return;
-  try { load(await f.text()); } catch (err) { alert('대회 파일이 아닙니다. 이 화면의 \'파일로 저장\'으로 만든 파일을 골라 주세요.'); return; }
-  save();
-  renderHeader();
-};
 
 // 인터넷 저장: 구글 로그인만 Firebase SDK 를 쓰고, 저장소는 Firestore REST 를 바로 부른다. 규칙은 firestore.rules
 // 회원마다 users/{uid} 에 가입 신청 문서가 있고, 관리자가 approved 를 true 로 바꾸면 users/{uid}/saves 를 쓸 수 있다
@@ -103,6 +84,7 @@ async function showMember() {
   document.body.classList.remove('locked');
   show('admin', isAdmin());
   show('withdraw', !isAdmin()); // 관리자가 빠지면 아무도 승인을 못 하니 탈퇴 버튼을 안 준다
+  renderSave(); // 저장 탭을 연 채로 새로고침했으면 로그인 전에 그려져 목록이 비어 있다
   // 앱이 열린 뒤라 로그인 화면 문구는 안 보이니, 실패는 관리자 칸에 적는다
   if (isAdmin()) await showPending().catch(e => { $('admin-msg').textContent = e.message; });
 }
@@ -118,7 +100,7 @@ $('cloud-logout').onclick = $('gate-logout').onclick = cloudTry(async () => { co
 // 탈퇴: 인터넷 저장본 → 가입 문서 → 구글 로그인 계정 순으로 지운다. 저장본 지우다 실패하면 다시 누르면 된다.
 // 마지막 계정 지우기만 실패하면 다음 로그인 때 새 가입 신청으로 보이니, 관리자가 거절하면 된다
 $('withdraw').onclick = cloudTry(async () => {
-  if (isAdmin() || !confirm('탈퇴하면 인터넷에 저장한 대회가 모두 지워지고 되돌릴 수 없습니다.\n이 컴퓨터에 있는 지금 대회는 남습니다.\n계속할까요?')) return;
+  if (isAdmin() || !confirm('탈퇴하면 저장한 대회가 모두 지워지고 되돌릴 수 없습니다.\n이 컴퓨터에 있는 지금 대회는 남습니다.\n계속할까요?')) return;
   const f = await sdk();
   // 로그인 계정은 방금 로그인한 사람만 지울 수 있어서, 지우기 전에 한 번 더 로그인 받는다
   try { await f.reauthenticateWithPopup(user, new f.GoogleAuthProvider()); } catch (e) {
@@ -165,22 +147,26 @@ $('cloud-save').onclick = cloudTry(async () => {
     updateTransforms: [{ fieldPath: 'savedAt', setToServerValue: 'REQUEST_TIME' }],
     currentDocument: { exists: false },
   }] }) });
-  cloudMsg('인터넷에 저장됨');
-  if ($('cloud-table').innerHTML) await showList();
+  // 저장은 끝났으니 목록 읽기 실패는 경고창 대신 문구로만 (경고창이면 실패로 알고 또 저장한다)
+  await showList().then(() => cloudMsg('저장됨'), e => cloudMsg('저장됨. 목록은 못 읽었습니다: ' + e.message));
 });
 
 async function showList() {
+  const u = user; // 읽는 사이 다른 계정으로 바뀌면 옛 계정 목록을 그리지 않는다
   cloudMsg('목록 읽는 중…');
-  const documents = await listAll(`/users/${user.uid}/saves?mask.fieldPaths=title&mask.fieldPaths=savedAt&pageSize=300`);
+  // shortcut: 대회 이름을 꺼내려고 저장본 전체(data)를 받는다. 저장본이 수백 개로 늘어 느려지면 저장할 때 이름 칸을 따로 두고 firestore.rules 도 고친다
+  const documents = await listAll(`/users/${u.uid}/saves?mask.fieldPaths=title&mask.fieldPaths=savedAt&mask.fieldPaths=data&pageSize=300`);
+  if (u !== user) return;
+  const game = d => { try { return JSON.parse(d.fields.data.stringValue).settings.title || ''; } catch (e) { return ''; } };
   // 예전 저장본은 savedAt 이 글자(stringValue), 새 것은 서버 시각(timestampValue). 섞이면 서버 정렬이 어긋나 여기서 정렬한다
   const at = d => new Date(d.fields.savedAt.timestampValue ?? d.fields.savedAt.stringValue);
   documents.sort((a, b) => at(b) - at(a));
-  cloudMsg(documents.length ? '' : '저장된 것이 없습니다');
-  $('cloud-table').innerHTML = documents.length ? '<tr><th>제목</th><th>저장 시각</th><th></th></tr>' + documents.map(d =>
-    `<tr><td>${esc(d.fields.title.stringValue)}</td><td>${esc(at(d).toLocaleString('ko-KR'))}</td>
-      <td><button class="btn" data-doc="${esc(d.name)}">불러오기</button></td></tr>`).join('') : '';
+  cloudMsg('');
+  $('cloud-table').innerHTML = '<tr><th>제목</th><th>대회 이름</th><th>저장 시각</th><th></th></tr>' + (documents.map(d =>
+    `<tr><td>${esc(d.fields.title.stringValue)}</td><td>${esc(game(d))}</td><td>${esc(at(d).toLocaleString('sv-SE').slice(0, 16))}</td>
+      <td><button class="btn" data-doc="${esc(d.name)}">불러오기</button></td></tr>`).join('')
+    || '<tr><td class="empty" colspan="4">저장된 정보가 없습니다</td></tr>');
 }
-$('cloud-list').onclick = cloudTry(showList);
 
 $('cloud-table').onclick = e => {
   const name = e.target.dataset.doc;
