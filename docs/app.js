@@ -4,8 +4,9 @@ import { renderEntry } from './tab-entry.js';
 import { renderRank } from './tab-rank.js';
 import { renderAward } from './tab-award.js';
 import { renderSetting } from './tab-setting.js';
+import { renderSave } from './account.js';
 
-const RENDER = { input: renderEntry, rank: renderRank, award: renderAward, setting: renderSetting };
+const RENDER = { input: renderEntry, rank: renderRank, award: renderAward, setting: renderSetting, save: renderSave };
 let cur;
 function showTab(tab) {
   cur = tab;

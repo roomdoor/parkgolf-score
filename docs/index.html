@@ -21,13 +21,30 @@
   <p id="gate-msg">확인 중…</p>
   <button class="btn" id="gate-logout" hidden>로그아웃</button>
 </div></div>
-<header><h1 id="h-title"></h1><p id="h-sub"></p></header>
+<header><h1 id="h-title"></h1><p id="h-sub"></p>
+  <!-- 오른쪽 위 계정 메뉴: account.js -->
+  <details id="account">
+    <summary id="avatar" aria-label="내 계정"></summary>
+    <div class="menu">
+      <p id="me-name"></p>
+      <p id="me-email"></p>
+      <div id="admin" hidden>
+        <h3>가입 신청 승인</h3>
+        <span class="saved" id="admin-msg"></span>
+        <table id="admin-table"></table>
+      </div>
+      <button class="btn" id="cloud-logout">로그아웃</button>
+      <button class="btn danger" id="withdraw" hidden>회원 탈퇴</button>
+    </div>
+  </details>
+</header>
 <button class="btn" id="tv-off">TV 화면 끄기 (Esc)</button>
 <nav>
   <button data-tab="input">성적 입력</button>
   <button data-tab="rank">순위표</button>
   <button data-tab="award">시상자</button>
   <button data-tab="setting">대회 설정</button>
+  <button data-tab="save">저장·불러오기</button>
 </nav>
 <main>
   <p id="storage-warn" class="warn" hidden>이 창을 닫으면 입력한 점수가 사라집니다. 크롬이나 엣지의 일반 창(시크릿 창 아님)에서 여세요.</p>
@@ -137,32 +154,6 @@
     </div>
     </div>
     </div>
-    <div class="card wide">
-    <h2>인터넷이 안 될 때: 파일로 저장·불러오기</h2>
-    <p class="hint">다른 컴퓨터로 옮길 때는 아래 '인터넷에 저장'을 쓰세요.<br>
-      인터넷이 안 되는 곳에서는 '파일로 저장'으로 이 컴퓨터에 파일을 남겨 두고, 나중에 '파일 불러오기'로 되살릴 수 있습니다.</p>
-    <div class="toolbar">
-      <button class="btn" id="export">파일로 저장</button>
-      <label class="btn">파일 불러오기<input type="file" id="import" accept=".json,application/json" hidden></label>
-    </div>
-    </div>
-    <div class="card wide">
-    <h2>인터넷에 저장·불러오기</h2>
-    <p class="hint">어느 컴퓨터에서든 같은 구글 계정으로 로그인하면 내 저장 목록이 보입니다. 저장할 때마다 따로 쌓이고, 지난 저장본은 바뀌지 않습니다.</p>
-    <div class="toolbar">
-      <button class="btn main" id="cloud-save">인터넷에 저장</button>
-      <button class="btn" id="cloud-list">저장 목록 보기</button>
-      <span id="cloud-user"></span>
-      <button class="btn" id="cloud-logout">로그아웃</button>
-      <span class="saved" id="cloud-msg"></span>
-    </div>
-    <table id="cloud-table"></table>
-    <div id="admin" hidden>
-      <h2>가입 신청 (관리자)</h2>
-      <span class="saved" id="admin-msg"></span>
-      <table id="admin-table"></table>
-    </div>
-    </div>
     <!-- 되돌릴 수 없는 버튼이라 다른 설정과 떼어 둔다 -->
     <div class="card wide danger-zone">
     <h2>새 대회 시작</h2>
@@ -171,6 +162,31 @@
     <div class="toolbar">
       <button class="btn danger" id="reset">선수와 점수 모두 지우기</button>
       <button class="btn" id="sample">예시 선수 넣어 보기</button>
+    </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- 저장·불러오기: account.js -->
+  <section id="save" class="form">
+    <div class="cards">
+    <div class="card wide">
+    <h2>인터넷에 저장·불러오기</h2>
+    <p class="hint">어느 컴퓨터에서든 같은 구글 계정으로 로그인하면 내 저장 목록이 보입니다. 저장할 때마다 따로 쌓이고, 지난 저장본은 바뀌지 않습니다.</p>
+    <div class="toolbar">
+      <button class="btn main" id="cloud-save">인터넷에 저장</button>
+      <button class="btn" id="cloud-list">저장 목록 보기</button>
+      <span class="saved" id="cloud-msg"></span>
+    </div>
+    <table id="cloud-table"></table>
+    </div>
+    <div class="card wide">
+    <h2>인터넷이 안 될 때: 파일로 저장·불러오기</h2>
+    <p class="hint">다른 컴퓨터로 옮길 때는 위 '인터넷에 저장'을 쓰세요.<br>
+      인터넷이 안 되는 곳에서는 '파일로 저장'으로 이 컴퓨터에 파일을 남겨 두고, 나중에 '파일 불러오기'로 되살릴 수 있습니다.</p>
+    <div class="toolbar">
+      <button class="btn" id="export">파일로 저장</button>
+      <label class="btn">파일 불러오기<input type="file" id="import" accept=".json,application/json" hidden></label>
     </div>
     </div>
     </div>

@@ -1,7 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // docs/tab-setting.js 의 ADMIN 과 같은 이메일
+    // docs/account.js 의 ADMIN 과 같은 이메일
     function isAdmin() {
       return request.auth != null && request.auth.token.email == 'roomdoor.lee@gmail.com' && request.auth.token.email_verified == true;
     }
@@ -22,11 +22,13 @@ service cloud.firestore {
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['approved'])
         && request.resource.data.approved is bool;
-      allow delete: if isAdmin();
+      // 거절은 관리자, 탈퇴는 본인
+      allow delete: if isAdmin() || isMe(uid);
 
-      // 승인된 본인만 읽고 새로 저장한다. 고치기·지우기는 막아 지난 저장본을 지킨다
+      // 승인된 본인만 읽고 새로 저장한다. 고치기는 막아 지난 저장본을 지킨다. 지우기는 탈퇴할 때 본인만
       match /saves/{save} {
         allow read: if approved(uid);
+        allow delete: if isMe(uid);
         // 세 칸이 모두 있어야 한다. 하나라도 빠진 문서가 있으면 목록 화면이 깨진다
         allow create: if approved(uid)
           && request.resource.data.keys().hasAll(['title', 'savedAt', 'data'])
