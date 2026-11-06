@@ -124,7 +124,7 @@ async function sdk() {
     const [{ initializeApp }, a] = await Promise.all([import(SDK + 'firebase-app.js'), import(SDK + 'firebase-auth.js')]);
     fb = { ...a, auth: a.getAuth(initializeApp(FIREBASE)) };
   } catch (e) { throw new Error('인터넷 연결을 확인한 뒤 새로고침해 주세요'); } // 한 번 실패한 모듈은 새로고침해야 다시 받는다
-  fb.onAuthStateChanged(fb.auth, u => { user = u; showMember().catch(e => gateMsg(e.message)); });
+  fb.onAuthStateChanged(fb.auth, u => { user = u; showMember().catch(e => { if (u === user) gateMsg(e.message); }); });
   return fb;
 }
 sdk().catch(e => gateMsg(e.message)); // 지난번 로그인을 되살린다
@@ -155,6 +155,7 @@ async function showMember() {
   cloudMsg('');
   gateMsg(user ? '가입 확인 중…' : '');
   if (!user) return;
+  const u = user; // 기다리는 사이 다른 계정으로 바뀌면 옛 결과로 앱을 열지 않는다
   let ok = isAdmin();
   if (!ok) { // 처음 로그인이면 가입 신청 문서를 만든다
     const me = await api(`/users/${user.uid}`) ?? await api(`/users?documentId=${user.uid}`, { method: 'POST', body: JSON.stringify({ fields: {
@@ -162,6 +163,7 @@ async function showMember() {
       name: { stringValue: (user.displayName || '').slice(0, 100) },
       approved: { booleanValue: false },
     } }) });
+    if (u !== user) return;
     ok = me.fields.approved.booleanValue;
   }
   if (!ok) return gateMsg('가입 신청됨. 관리자가 승인한 뒤 새로고침하면 쓸 수 있습니다');
