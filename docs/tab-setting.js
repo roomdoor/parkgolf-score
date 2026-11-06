@@ -68,14 +68,14 @@ const GIVEN = { 남: ['영수', '정호', '성민', '동현', '재훈', '상철'
 function samplePlayers() {
   const s = state.settings, players = [];
   const add = (gender, club, event, team = '') => {
-    const i = players.length; // 이름은 80명마다 한 번 겹치니 그보다 적게 만든다 (지금 최대 76명)
-    players.push({ ...blankPlayer(), name: SUR[i % 20] + GIVEN[gender][(i + Math.floor(i / 20)) % 12], gender, club, group: `${Math.floor(i / 4) + 1}조`, event, team,
+    const i = players.length; // 이름은 240명마다 한 번 겹치니 그보다 적게 만든다 (지금 최대 88명)
+    players.push({ ...blankPlayer(), name: SUR[i % 20] + GIVEN[gender][(i % 20 + Math.floor(i / 20)) % 12], gender, club, group: `${Math.floor(i / 4) + 1}조`, event, team,
       scores: s.pars.map(par => Math.min(99, Math.max(9, par - 3 + Math.floor(Math.random() * 11)))) });
   };
   if (s.indiv) for (let i = 0; i < 40; i++) add(i < 24 ? '남' : '여', CLUBS[i % CLUBS.length], '개인');
   if (s.team) for (const club of CLUBS) {
     if (s.teamSplit === 'mixed') ['1팀', '2팀'].forEach(t => { add('남', club, '단체', `${club} ${t}`); add('여', club, '단체', `${club} ${t}`); });
-    else ['남', '여'].forEach(g => { for (let j = 0; j < 3; j++) add(g, club, '단체', `${club} ${g}자팀`); });
+    else ['남', '여'].forEach(g => ['1팀', '2팀'].forEach(t => { add(g, club, '단체', `${club} ${g}자${t}`); add(g, club, '단체', `${club} ${g}자${t}`); }));
   }
   return players;
 }

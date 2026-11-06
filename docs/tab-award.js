@@ -24,7 +24,7 @@ function awardBlocks(title, n, a, key, heads, cols, card, sudden = true) {
 
 export function renderAward() {
   const s = state.settings;
-  let html = '<p class="hint">공동 순위면 모두 표시합니다. 개인전·단체전 공동 1위는 연장전(서든데스)으로 가립니다.</p>';
+  let html = '';
   const ig = s.indivSplit === 'gender', tg = s.teamSplit === 'gender';
   const teamClub = q => q.mixedClub ? '여러 클럽' : q.club;
   if (s.indiv) html += awardBlocks('개인전', s.awardN, awards(rankPlayers(indivPlayers()), s.awardN, ig), ig ? 'divRank' : 'rank',

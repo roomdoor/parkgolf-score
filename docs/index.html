@@ -51,19 +51,11 @@
 
   <!-- 성적 입력: tab-entry.js -->
   <section id="input">
-    <details class="hint" id="entry-help" open><summary>입력 방법</summary><ul class="hint">
-      <li>노란 칸에 적으면 바로 저장됩니다.</li>
-      <li>코스 칸에는 그 코스 9홀 합계를 적습니다. (코스 수는 '대회 설정'에서) 두 자리를 적으면 다음 코스 칸으로 넘어갑니다.</li>
-      <li>방향키(↑↓←→)로 칸을 옮깁니다. Enter를 누르면 아래 칸으로 갑니다. 빨간 줄은 확인이 필요합니다.</li>
-      <li>칸 제목(⇅ 표시)을 누르면 정렬됩니다. 여러 칸을 차례로 누르면 누른 순서(①②)대로 정렬합니다. 같은 제목을 다시 누르면 거꾸로, 한 번 더 누르면 빠집니다.</li>
-      <li>이름 찾기에 이름을 적고 Enter를 누르면 그 선수의 빈 점수 칸으로 갑니다.</li>
-      <li id="pick-hint">초록 점수 칸은 단체전 팀 점수로 쓰인 점수(그 코스 팀원 중 최저타)입니다.</li>
-    </ul></details>
     <div class="toolbar">
-      <label>이름 찾기 <input id="find" type="search" placeholder="이름"></label>
-      <label>조 <select id="group-filter"></select></label>
+      <button class="btn" id="sort-off">정렬 초기화</button>
+      <div class="find"><input id="find" type="search" placeholder="이름" aria-label="이름 검색">
+      <button class="btn" id="find-go" aria-label="검색"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></button></div>
     </div>
-    <div class="toolbar">정렬: <b id="sort-now"></b><button class="btn" id="sort-off">정렬 초기화</button></div>
     <div class="scroll"><table id="entry"></table></div>
     <datalist id="club-names"></datalist><datalist id="team-names"></datalist>
     <div class="toolbar">
@@ -75,11 +67,9 @@
   <!-- 순위표: tab-rank.js -->
   <section id="rank">
     <div class="toolbar">
-      <button class="btn main" onclick="window.print()">인쇄하기</button>
       <button class="btn gold" id="tv-on">📺 TV로 크게 보기</button>
-      <span class="stats" id="stats"></span>
+      <button class="btn main" style="margin-left:auto" onclick="window.print()">인쇄하기</button>
     </div>
-    <p class="hint" id="rule"></p>
     <div id="indiv-rank"><h3>개인전</h3><div class="scroll"><table id="rank-table"></table></div></div>
     <div id="team-rank"><h3>단체전</h3><div class="scroll"><table id="team-table"></table></div><p class="hint" id="team-wait"></p></div>
     <div id="club-rank"><h3>클럽 종합</h3><div class="scroll"><table id="club-table"></table></div></div>
@@ -97,10 +87,8 @@
     <div class="card">
     <h2>대회 정보</h2>
     <label for="s-title">대회명</label><input type="text" id="s-title" data-s="title">
-    <div class="row">
-      <div><label for="s-date">날짜</label><input type="date" id="s-date" data-s="date"></div>
-      <div><label for="s-place">장소</label><input type="text" id="s-place" data-s="place"></div>
-    </div>
+    <label for="s-place">장소</label><input type="text" id="s-place" data-s="place">
+    <label for="s-date">날짜</label><input type="date" id="s-date" data-s="date">
     </div>
     <div class="card">
     <h2>코스 설정</h2>
@@ -131,7 +119,29 @@
         <select id="s-taward" data-s="teamAwardN" aria-label="단체전 시상"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select> 등까지 시상
       </div>
       <details class="hint"><summary>팀은 어떻게 정해지나요?</summary>
-        입력표 '팀' 칸에 같은 팀 이름을 적은 선수끼리 한 팀입니다. 코스마다 팀원 중 가장 적은 타수가 팀 점수입니다.</details>
+        <ul>
+          <li>성적 입력 표의 '팀' 칸에 같은 팀 이름을 적은 선수끼리 한 팀입니다.</li>
+          <li>코스마다 팀원 중 가장 적은 타수가 그 코스의 팀 점수입니다.</li>
+          <li>코스별 팀 점수를 모두 더한 것이 팀 합계입니다.</li>
+        </ul>
+        <p>예시 1: 팀원마다 한 줄씩 적기 (한강클럽 1팀)</p>
+        <table>
+          <tr><th>선수</th><th>A코스</th><th>B코스</th><th>C코스</th><th>D코스</th><th>합계</th></tr>
+          <tr><td>김영수</td><td><b>31</b></td><td>36</td><td><b>32</b></td><td>35</td><td></td></tr>
+          <tr><td>이정호</td><td>34</td><td><b>33</b></td><td>34</td><td><b>30</b></td><td></td></tr>
+          <tr class="ex-sum"><td>팀 점수</td><td>31</td><td>33</td><td>32</td><td>30</td><td>126</td></tr>
+        </table>
+        <p>예시 2: 팀 점수만 한 줄로 적기 (남산클럽 1팀)</p>
+        <ul>
+          <li>팀 점수를 이미 알면, 팀원을 나누지 않고 한 줄에 팀 점수만 적어도 됩니다.</li>
+          <li>이름 칸에는 팀 이름처럼 알아볼 수 있는 이름을 적습니다.</li>
+          <li>성별·소속·종목·팀 칸은 팀원 줄과 똑같이 채웁니다.</li>
+        </ul>
+        <table>
+          <tr><th>선수</th><th>A코스</th><th>B코스</th><th>C코스</th><th>D코스</th><th>합계</th></tr>
+          <tr><td>남산클럽 1팀</td><td><b>32</b></td><td><b>31</b></td><td><b>33</b></td><td><b>30</b></td><td></td></tr>
+          <tr class="ex-sum"><td>팀 점수</td><td>32</td><td>31</td><td>33</td><td>30</td><td>126</td></tr>
+        </table></details>
     </fieldset>
     </div>
     <div>
@@ -148,8 +158,23 @@
       <input type="text" id="s-tpts" data-pts="teamPts" required pattern="[0-9 ,，、]*[0-9][0-9 ,，、]*" placeholder="예: 8, 6, 4, 2">
       <span class="err">점수를 쉼표로 나눠 적어 주세요 (예: 8, 6, 4, 2)</span>
       <details class="hint"><summary>점수는 어떻게 매기나요?</summary>
-        남녀 따로면 남자부·여자부 순위에 각각 점수를 줍니다. 공동 순위는 같은 점수입니다.
-        총점이 같으면 단체전 타수 합이 적은 클럽, (단체전 남녀 따로일 때) 그다음 여자팀 타수 합이 적은 클럽이 앞섭니다.</details>
+        <ul>
+          <li>개인전·단체전 순위에 따라 위에 적은 점수를 그 선수(팀)의 클럽에 줍니다.</li>
+          <li>남녀 따로면 남자부·여자부 순위에 각각 점수를 줍니다.</li>
+          <li>공동 순위는 같은 점수입니다.</li>
+          <li>받은 점수를 모두 더한 것이 클럽 총점입니다.</li>
+          <li>총점이 같으면 순위에 든 팀이 많은 클럽이 앞섭니다.</li>
+          <li>그래도 같으면 단체전 타수 합이 적은 클럽이 앞섭니다.</li>
+          <li>(단체전 남녀 따로일 때) 그래도 같으면 여자팀 타수 합이 적은 클럽이 앞섭니다.</li>
+        </ul>
+        <p>예시: 한강클럽 (개인전 6, 4, 3, 2, 1 / 단체전 8, 6, 4, 2)</p>
+        <table>
+          <tr><th>받은 순위</th><th>점수</th></tr>
+          <tr><td>개인전 남자부 1위</td><td>6</td></tr>
+          <tr><td>개인전 여자부 3위</td><td>3</td></tr>
+          <tr><td>단체전 남자부 2위</td><td>6</td></tr>
+          <tr class="ex-sum"><td>클럽 총점</td><td>15</td></tr>
+        </table></details>
     </fieldset>
     </div>
     </div>
@@ -157,8 +182,6 @@
     <!-- 되돌릴 수 없는 버튼이라 다른 설정과 떼어 둔다 -->
     <div class="card wide danger-zone">
     <h2>새 대회 시작</h2>
-    <p class="hint">지난 대회 선수가 남아 있으면 아래 버튼으로 지우고 시작하세요. 대회 설정은 남습니다.<br>
-      '예시 선수 넣어 보기'는 지금 경기 설정에 맞춘 가짜 선수와 점수로 순위표·시상자 화면을 미리 볼 때 씁니다.</p>
     <div class="toolbar">
       <button class="btn danger" id="reset">선수와 점수 모두 지우기</button>
       <button class="btn" id="sample">예시 선수 넣어 보기</button>
@@ -171,23 +194,12 @@
   <section id="save" class="form">
     <div class="cards">
     <div class="card wide">
-    <h2>인터넷에 저장·불러오기</h2>
-    <p class="hint">어느 컴퓨터에서든 같은 구글 계정으로 로그인하면 내 저장 목록이 보입니다. 저장할 때마다 따로 쌓이고, 지난 저장본은 바뀌지 않습니다.</p>
+    <h2>저장·불러오기</h2>
     <div class="toolbar">
-      <button class="btn main" id="cloud-save">인터넷에 저장</button>
-      <button class="btn" id="cloud-list">저장 목록 보기</button>
+      <button class="btn main" id="cloud-save">현재 상태 저장</button>
       <span class="saved" id="cloud-msg"></span>
     </div>
     <table id="cloud-table"></table>
-    </div>
-    <div class="card wide">
-    <h2>인터넷이 안 될 때: 파일로 저장·불러오기</h2>
-    <p class="hint">다른 컴퓨터로 옮길 때는 위 '인터넷에 저장'을 쓰세요.<br>
-      인터넷이 안 되는 곳에서는 '파일로 저장'으로 이 컴퓨터에 파일을 남겨 두고, 나중에 '파일 불러오기'로 되살릴 수 있습니다.</p>
-    <div class="toolbar">
-      <button class="btn" id="export">파일로 저장</button>
-      <label class="btn">파일 불러오기<input type="file" id="import" accept=".json,application/json" hidden></label>
-    </div>
     </div>
     </div>
   </section>
