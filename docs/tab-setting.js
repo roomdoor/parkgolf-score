@@ -170,7 +170,8 @@ async function showMember() {
   gateMsg('');
   document.body.classList.remove('locked');
   show('admin', isAdmin());
-  if (isAdmin()) await showPending();
+  // 앱이 열린 뒤라 로그인 화면 문구는 안 보이니, 실패는 관리자 칸에 적는다
+  if (isAdmin()) await showPending().catch(e => { $('admin-msg').textContent = e.message; });
 }
 
 $('cloud-login').onclick = cloudTry(async () => {
