@@ -32,9 +32,8 @@ service cloud.firestore {
           && request.resource.data.keys().hasAll(['title', 'savedAt', 'data'])
           && request.resource.data.keys().hasOnly(['title', 'savedAt', 'data'])
           && request.resource.data.title is string && request.resource.data.title.size() <= 200
-          // toISOString() 모양만 받는다. 아니면 목록에 'Invalid Date' 로 보인다
-          && request.resource.data.savedAt is string
-          && request.resource.data.savedAt.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z')
+          // 서버 시각(REQUEST_TIME)만 받는다. 브라우저 시계가 틀려도 목록 순서가 맞다
+          && request.resource.data.savedAt == request.time
           && request.resource.data.data is string && request.resource.data.data.size() <= 500000;
       }
     }

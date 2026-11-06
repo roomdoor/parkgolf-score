@@ -138,6 +138,17 @@ async function api(path, opt = {}) {
   if (!r.ok) throw new Error(`저장소 오류 (${r.status})`);
   return r.json();
 }
+// 목록은 한 번에 pageSize 개씩만 오니, 다음 쪽 표(nextPageToken)가 없을 때까지 모두 받는다
+async function listAll(path) {
+  const all = [];
+  let token;
+  do {
+    const r = await api(path + (token ? '&pageToken=' + encodeURIComponent(token) : ''));
+    all.push(...(r.documents || []));
+    token = r.nextPageToken;
+  } while (token);
+  return all;
+}
 const cloudMsg = t => { $('cloud-msg').textContent = t; };
 const cloudTry = fn => async () => { try { await fn(); } catch (e) { cloudMsg(''); alert(e.message); } };
 const gateMsg = t => { $('gate-msg').textContent = t; };
@@ -183,7 +194,7 @@ $('cloud-login').onclick = cloudTry(async () => {
 $('cloud-logout').onclick = $('gate-logout').onclick = cloudTry(async () => { const f = await sdk(); await f.signOut(f.auth); });
 
 async function showPending() {
-  const { documents = [] } = await api('/users?pageSize=300');
+  const documents = await listAll('/users?pageSize=300');
   const wait = documents.filter(d => !d.fields.approved.booleanValue);
   $('admin-msg').textContent = wait.length ? '' : '승인을 기다리는 사람이 없습니다';
   $('admin-table').innerHTML = wait.length ? '<tr><th>이름</th><th>이메일</th><th></th></tr>' + wait.map(d => {
@@ -206,21 +217,28 @@ $('cloud-save').onclick = cloudTry(async () => {
   const title = (prompt('이번 저장의 제목을 적어 주세요 (예: 오전 경기 끝)') ?? '').trim();
   if (!title) return; // 취소했거나 비워 둠
   cloudMsg('저장 중…');
-  await api(`/users/${user.uid}/saves`, { method: 'POST', body: JSON.stringify({ fields: {
-    title: { stringValue: title.slice(0, 200) },
-    savedAt: { stringValue: new Date().toISOString() },
-    data: { stringValue: JSON.stringify(state) },
-  } }) });
+  // 저장 시각은 서버가 적는다(REQUEST_TIME). 컴퓨터 시계가 틀려도 목록 순서가 맞다
+  await api(':commit', { method: 'POST', body: JSON.stringify({ writes: [{
+    update: { name: `${DOCS.split('/v1/')[1]}/users/${user.uid}/saves/${crypto.randomUUID()}`, fields: {
+      title: { stringValue: title.slice(0, 200) },
+      data: { stringValue: JSON.stringify(state) },
+    } },
+    updateTransforms: [{ fieldPath: 'savedAt', setToServerValue: 'REQUEST_TIME' }],
+    currentDocument: { exists: false },
+  }] }) });
   cloudMsg('인터넷에 저장됨');
   if ($('cloud-table').innerHTML) await showList();
 });
 
 async function showList() {
   cloudMsg('목록 읽는 중…');
-  const { documents = [] } = await api(`/users/${user.uid}/saves?mask.fieldPaths=title&mask.fieldPaths=savedAt&orderBy=savedAt%20desc&pageSize=300`);
+  const documents = await listAll(`/users/${user.uid}/saves?mask.fieldPaths=title&mask.fieldPaths=savedAt&pageSize=300`);
+  // 예전 저장본은 savedAt 이 글자(stringValue), 새 것은 서버 시각(timestampValue). 섞이면 서버 정렬이 어긋나 여기서 정렬한다
+  const at = d => new Date(d.fields.savedAt.timestampValue ?? d.fields.savedAt.stringValue);
+  documents.sort((a, b) => at(b) - at(a));
   cloudMsg(documents.length ? '' : '저장된 것이 없습니다');
   $('cloud-table').innerHTML = documents.length ? '<tr><th>제목</th><th>저장 시각</th><th></th></tr>' + documents.map(d =>
-    `<tr><td>${esc(d.fields.title.stringValue)}</td><td>${esc(new Date(d.fields.savedAt.stringValue).toLocaleString('ko-KR'))}</td>
+    `<tr><td>${esc(d.fields.title.stringValue)}</td><td>${esc(at(d).toLocaleString('ko-KR'))}</td>
       <td><button class="btn" data-doc="${esc(d.name)}">불러오기</button></td></tr>`).join('') : '';
 }
 $('cloud-list').onclick = cloudTry(showList);
