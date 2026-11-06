@@ -1,5 +1,5 @@
 // ---------- 대회 설정 탭 ----------
-import { $, esc, onBoth, state, save, renderHeader, MAX_COURSES, courseName, blankPlayer } from './common.js';
+import { $, esc, onBoth, state, load, save, renderHeader, MAX_COURSES, courseName, blankPlayer } from './common.js';
 
 export function renderSetting() {
   const s = state.settings;
@@ -87,6 +87,77 @@ $('sample').onclick = () => {
   save();
   renderHeader();
   renderSetting();
+};
+
+// 다른 컴퓨터로 옮길 때 쓰는 파일. 이름에 저장 시각을 붙여 중간 저장본끼리 구분한다
+$('export').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], { type: 'application/json' }));
+  const when = new Date().toLocaleString('sv-SE').slice(0, 16).replace(':', ''); // 2026-11-06 1430
+  a.download = `${(state.settings.title || '파크골프 대회').replace(/[\\/:*?"<>|]/g, '')} ${when}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+$('import').onchange = async e => {
+  const f = e.target.files[0];
+  e.target.value = ''; // 같은 파일을 다시 골라도 동작하게
+  if (!f || !confirm('지금 대회 설정·선수·점수가 파일 내용으로 바뀝니다. 되돌릴 수 없습니다.\n계속할까요?')) return;
+  try { load(await f.text()); } catch (err) { alert('대회 파일이 아닙니다. 이 화면의 \'파일로 저장\'으로 만든 파일을 골라 주세요.'); return; }
+  save();
+  renderHeader();
+  renderSetting();
+};
+
+// 인터넷 저장: Firestore REST 를 바로 부른다 (SDK 없이). 규칙은 firestore.rules
+// ponytail: 로그인 없이 모두가 한 목록을 같이 쓴다. 회원 기능을 넣으면 users/{uid}/saves 로 나눌 것
+const FIREBASE_PROJECT = 'parkgolf-score-98cf2';
+const SAVES = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/saves`;
+
+async function api(url, opt) {
+  let r;
+  try { r = await fetch(url, opt); } catch (e) { throw new Error('인터넷 연결을 확인해 주세요'); }
+  if (!r.ok) throw new Error(`저장소 오류 (${r.status})`);
+  return r.json();
+}
+const cloudMsg = t => { $('cloud-msg').textContent = t; };
+const cloudTry = fn => async () => { try { await fn(); } catch (e) { cloudMsg(''); alert(e.message); } };
+
+$('cloud-save').onclick = cloudTry(async () => {
+  const title = (prompt('이번 저장의 제목을 적어 주세요 (예: 오전 경기 끝)') ?? '').trim();
+  if (!title) return; // 취소했거나 비워 둠
+  cloudMsg('저장 중…');
+  await api(SAVES, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: {
+    title: { stringValue: title.slice(0, 200) },
+    savedAt: { stringValue: new Date().toISOString() },
+    data: { stringValue: JSON.stringify(state) },
+  } }) });
+  cloudMsg('인터넷에 저장됨');
+  if ($('cloud-table').innerHTML) await showList();
+});
+
+async function showList() {
+  cloudMsg('목록 읽는 중…');
+  const { documents = [] } = await api(`${SAVES}?mask.fieldPaths=title&mask.fieldPaths=savedAt&orderBy=savedAt%20desc&pageSize=300`);
+  cloudMsg(documents.length ? '' : '저장된 것이 없습니다');
+  $('cloud-table').innerHTML = documents.length ? '<tr><th>제목</th><th>저장 시각</th><th></th></tr>' + documents.map(d =>
+    `<tr><td>${esc(d.fields.title.stringValue)}</td><td>${esc(new Date(d.fields.savedAt.stringValue).toLocaleString('ko-KR'))}</td>
+      <td><button class="btn" data-doc="${esc(d.name)}">불러오기</button></td></tr>`).join('') : '';
+}
+$('cloud-list').onclick = cloudTry(showList);
+
+$('cloud-table').onclick = e => {
+  const name = e.target.dataset.doc;
+  if (name) cloudTry(async () => {
+    if (!confirm('지금 대회 설정·선수·점수가 이 저장본으로 바뀝니다. 되돌릴 수 없습니다.\n계속할까요?')) return;
+    cloudMsg('불러오는 중…');
+    const d = await api(`https://firestore.googleapis.com/v1/${name}`);
+    load(d.fields.data.stringValue);
+    save();
+    renderHeader();
+    renderSetting();
+    cloudMsg('불러왔습니다');
+  })();
 };
 
 // 이 버튼은 대회 설정 탭에만 있으니 설정 화면만 다시 그리면 된다

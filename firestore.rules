@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 로그인 없이 누구나 목록을 읽고 새로 저장할 수 있다. 고치기·지우기는 막아 지난 저장본을 지킨다.
+    // 회원 기능을 넣으면 users/{uid}/saves 로 옮기고 request.auth.uid == uid 일 때만 허용할 것.
+    match /saves/{save} {
+      allow read: if true;
+      // 세 칸이 모두 있어야 한다. 하나라도 빠진 문서가 있으면 목록 화면이 깨진다
+      allow create: if request.resource.data.keys().hasAll(['title', 'savedAt', 'data'])
+        && request.resource.data.keys().hasOnly(['title', 'savedAt', 'data'])
+        && request.resource.data.title is string && request.resource.data.title.size() <= 200
+        // toISOString() 모양만 받는다. 아니면 목록에 'Invalid Date' 로 보인다
+        && request.resource.data.savedAt is string
+        && request.resource.data.savedAt.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z')
+        && request.resource.data.data is string && request.resource.data.data.size() <= 500000;
+    }
+  }
+}
