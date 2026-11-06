@@ -127,6 +127,25 @@
     </div>
     </div>
     </div>
+    <div class="card wide">
+    <h2>파일로 저장·불러오기</h2>
+    <p class="hint">입력한 내용은 이 컴퓨터에 자동 저장됩니다.<br>
+      다른 컴퓨터에서 이어 하려면 '파일로 저장'한 파일을 USB·카카오톡·메일로 옮긴 뒤, 그 컴퓨터에서 '파일 불러오기'를 누르세요.</p>
+    <div class="toolbar">
+      <button class="btn" id="export">파일로 저장</button>
+      <label class="btn">파일 불러오기<input type="file" id="import" accept=".json,application/json" hidden></label>
+    </div>
+    </div>
+    <div class="card wide">
+    <h2>인터넷에 저장·불러오기</h2>
+    <p class="hint">어느 컴퓨터에서든 같은 저장 목록이 보입니다. 저장할 때마다 따로 쌓이고, 지난 저장본은 바뀌지 않습니다.</p>
+    <div class="toolbar">
+      <button class="btn main" id="cloud-save">인터넷에 저장</button>
+      <button class="btn" id="cloud-list">저장 목록 보기</button>
+      <span class="saved" id="cloud-msg"></span>
+    </div>
+    <table id="cloud-table"></table>
+    </div>
     <!-- 되돌릴 수 없는 버튼이라 다른 설정과 떼어 둔다 -->
     <div class="card wide danger-zone">
     <h2>새 대회 시작</h2>
