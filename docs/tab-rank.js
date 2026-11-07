@@ -45,8 +45,8 @@ document.fonts?.addEventListener('loadingdone', stickCols);
 function renderClubRank() {
   const list = clubRanking();
   if (!list.length) { $('club-table').innerHTML = '<tr><td class="empty">아직 순위가 나온 클럽이 없습니다.</td></tr>'; return; }
-  $('club-table').innerHTML = '<thead><tr><th>순위</th><th>클럽</th><th>총점</th><th>단체전 타수 합</th><th>점수 내역</th></tr></thead><tbody>'
-    + list.map(c => rankRow(c, c.rank, q => [q.club, q.points, q.teamCount ? q.teamStrokes : '', { html: q.detail.map(esc).join('<br>') }])).join('') + '</tbody>';
+  $('club-table').innerHTML = '<thead><tr><th>순위</th><th>클럽</th><th>총점</th><th>점수 내역</th></tr></thead><tbody>'
+    + list.map(c => rankRow(c, c.rank, q => [q.club, q.points, { html: q.detail.map(esc).join('<br>') }])).join('') + '</tbody>';
 }
 
 // 팀원 한 사람씩 한 줄. 팀 점수로 채택된 점수(코스마다 최저타)는 칠한다
